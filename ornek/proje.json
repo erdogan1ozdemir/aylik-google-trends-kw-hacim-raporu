@@ -1,0 +1,13 @@
+{
+  "marka": "Evimo",
+  "ajans": "Inbound",
+  "veri": "veri.json",
+  "yilSon": 2025,
+  "yilOnc": 2024,
+  "raporYili": 2026,
+  "logoMarka": "logo-marka.svg",
+  "logoAjans": "logo-ajans.svg",
+  "ilkAy": 11,
+  "hazirAylar": {},
+  "excelUrl": null
+}
