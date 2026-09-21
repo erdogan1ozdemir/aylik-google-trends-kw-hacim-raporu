@@ -42,6 +42,11 @@ function konfigOku(yol) {
     hazirAylar: c.hazirAylar || {},
     // Sekmelerin başladığı ay (1-12). Öncesi için çalışma yoksa gösterilmez.
     ilkAy: c.ilkAy || 1,
+    // Adımların aylık anlık görüntüleri. Verilmezse adımlar her derlemede
+    // yeniden üretilir (haftalık turda da değişir). references/rapor-yapisi.md
+    adimlarDizini: c.adimlarDizini
+      ? (path.isAbsolute(c.adimlarDizini) ? c.adimlarDizini : path.resolve(kok, c.adimlarDizini))
+      : null,
     logolar: {
       marka: dataUri(c.logoMarka, kok),
       ajans: dataUri(c.logoAjans, kok),

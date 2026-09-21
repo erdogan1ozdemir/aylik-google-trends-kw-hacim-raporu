@@ -123,7 +123,7 @@ python3 scripts/trends/plan.py havuzlar.json --yil 2026 --donmuslari-atla
 
 Hafta ortasında çekmek yeni bir hafta kazandırmaz; son tam Cumartesi aynı kalır, aynı pencere yeniden satın alınmış olur. Bir ayın son haftalık turu o ayın dondurma çekimidir; ertesi turda `dagit.py` o ayın dosyasını korur, yalnızca `donmus` işaretini açar ve sayfa yeniden üretildiğinde "Canlı" yerine "Ay Sonu" der.
 
-**Aylık:** ay değiştiğinde `proje.json` içinde `hazirAylar` güncellenir. Eşikler ve tanımlar **değiştirilmez** - aylar arası kıyas ancak sabit tanımla mümkün. Eşik değişecekse gerekçesi yazılır ve o ayın raporunda belirtilir.
+**Aylık:** ay değiştiğinde `proje.json` içinde `hazirAylar` güncellenir. "Değerlendirilebilecek adımlar" bölümü haftalık turda değişmez; aktif ayların adımları o ayın verisini taşıyan ilk haftalık turda kendiliğinden yenilenir, geçmiş ayların adımları nihaidir (`references/rapor-yapisi.md`, Adımlar). Eşikler ve tanımlar **değiştirilmez** - aylar arası kıyas ancak sabit tanımla mümkün. Eşik değişecekse gerekçesi yazılır ve o ayın raporunda belirtilir.
 
 ## Kurulum
 

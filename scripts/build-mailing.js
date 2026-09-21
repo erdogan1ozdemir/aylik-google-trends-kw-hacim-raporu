@@ -16,6 +16,8 @@ const { buildMailingData, trendsEkle, trendsDili, TR_MONTHS, LIMITS } = require(
 const { render, fmtVol, fmtPct, fmtIdx } = require('./lib/mailing-template');
 
 const { yukle } = require('./lib/proje');
+const { buildOzet, buildAksiyonlar } = require('./lib/rapor-metin');
+const { adimlariAl } = require('./lib/adimlar');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -26,6 +28,7 @@ function parseArgs(argv) {
     else if (argv[i] === '--config') a.config = argv[++i];
     else if (argv[i] === '--out') a.out = argv[++i];
     else if (argv[i] === '--trends-stdin') a.trendsStdin = true;
+    else if (argv[i] === '--adimlari-yenile') a.adimlariYenile = true;
     else if (argv[i] === '--genislik') a.genislik = Number(argv[++i]);
     // --web: tarayıcıda açılacak sürüm. E-posta istemcisi kısıtı geçerli
     // olmadığı için geniş ekranda içerik dar bir şerit halinde kalmaz.
@@ -54,91 +57,9 @@ function readTrendsStdin() {
   }
 }
 
-// Açılış bloğu: giriş cümlesi + madde listesi.
-// Üç iş yapar: ayın yıl içindeki yerini söyler, bu tablonun kategorilere eşit
-// dağılmadığını adlarıyla ve sayılarıyla gösterir, sonra okuyucuyu aşağıdaki
-// listeye bağlar. Tek bir keyword üzerinden kurulmaz - örnek keyword seçmek
-// ayın hikayesini o kelimenin şansına bırakıyordu.
-// Hangi yılın verisi olduğu her maddede açıkça yazılır; "yılın en düşük ayı"
-// ifadesi tek başına hangi yıl olduğunu söylemiyordu.
-function buildOzet(d, esikYuzde, yilSon) {
-  const o = d.ozet;
-  const n = o.siraYil;
-  const maddeler = [];
-
-  // 1) Ayın yıl içindeki yeri
-  const sira = n === 1 ? `${yilSon} yılının en yüksek hacimli ayıdır`
-    : n === 12 ? `${yilSon} yılının en düşük hacimli ayıdır`
-      : `${yilSon} yılı içinde hacim sıralamasında ${n}. sıradadır`;
-  // "2025 yılının ... ayıdır; toplam hacim 2025 yıl ortalamasının ..." tekrarını
-  // önlemek için ikinci yarıda yıl tekrar yazılmaz.
-  const sapma = Math.round(Math.abs(o.endeks - 1) * 100);
-  const yon = o.endeks >= 1.02 ? `yıl ortalamasının %${sapma} üzerindedir`
-    : o.endeks <= 0.98 ? `yıl ortalamasının %${sapma} altındadır`
-      : 'yıl ortalamasına yakındır';
-  maddeler.push(`${sira}; toplam hacim ${yon}.`);
-
-  // 2) Kategoriler arası ayrışma (Kat 2 - aşağıdaki tabloyla aynı seviye)
-  const sirali = [...d.altKategoriler].filter(r => r.endeks != null)
-    .sort((a, b) => b.endeks - a.endeks);
-  const ust = sirali[0], alt = sirali[sirali.length - 1];
-  if (ust && alt && (ust.endeks - alt.endeks) > 0.15) {
-    maddeler.push(`Kategoriler eşit dağılmamaktadır: <strong>${ust.kat}</strong> `
-      + `${fmtIdx(ust.endeks)} ile yıl ortalamasının üzerine çıkarken, `
-      + `<strong>${alt.kat}</strong> ${fmtIdx(alt.endeks)} ile en geride kalmaktadır.`);
-    maddeler.push('Aradaki fark, ayın tek bir toplam hacim rakamıyla planlanamayacağını göstermektedir.');
-  }
-
-  // 3) Havuz ve listelenen kısım
-  if (d.yukselenler.length) {
-    const havuz = d.havuzAdet || d.yukselenler.length;
-    maddeler.push(`Kendi yıl ortalamasının en az %${esikYuzde} üzerine çıkan `
-      + `<strong>${havuz} başlık</strong> bulunmaktadır; aşağıda hacme göre ilk `
-      + `${d.yukselenler.length} tanesi listelenmektedir.`);
-  }
-
-  return { giris: `${d.ayAdi} ${yilSon} genel görünümü:`, maddeler };
-}
-
-// Veriden türetilen, öneri kipinde aksiyon maddeleri.
-function buildAksiyonlar(d) {
-  const out = [];
-  const ay = d.ayAdi;
-
-  // 1) En yüksek endeksli başlıklar - içerik ve kampanya hazırlığı
-  const enYuksek = (d.keskinler || []).slice(0, 3);
-  if (enYuksek.length) {
-    const liste = enYuksek.map(r => `<strong>${r.kw}</strong> (${fmtIdx(r.endeks)})`).join(', ');
-    out.push(`${ay} ayında yıl ortalamasının en belirgin üzerine çıkan başlıklar ${liste} olarak öne çıkmaktadır. İlgili listeleme sayfalarının içerik ve kampanya hazırlığının ay başlamadan tamamlanması değerlendirilebilir.`);
-  }
-
-  // 2) Mevsimsel olarak öne çıkan kategori
-  const oneCikan = d.altKategoriler.filter(r => r.endeks != null && r.endeks >= 1.10)
-    .sort((a, b) => b.endeks - a.endeks)[0];
-  if (oneCikan) {
-    out.push(`Kategori düzeyinde <strong>${oneCikan.kat}</strong> ${fmtIdx(oneCikan.endeks)} ile ayrışmaktadır. Bu kategoride ana sayfa ve kategori girişi görünürlüğünün artırılması potansiyel taşımaktadır.`);
-  }
-
-  // 3) Yıl geneline göre en dirençli kategori
-  const dirençli = d.altKategoriler.filter(r => r.fark != null).sort((a, b) => b.fark - a.fark)[0];
-  if (dirençli && dirençli.fark > 0.01) {
-    out.push(`<strong>${dirençli.kat}</strong> kategorisi ${ay} ayında yıl geneline kıyasla ${(dirençli.fark * 100).toFixed(0)} puan daha dirençli seyretmektedir. Pazar genelindeki daralmaya karşın bu kategoride bütçe korunması değerlendirilebilir.`);
-  }
-
-  // 4) Alt kırılım büyümesi
-  if (d.buyuyenler.length) {
-    const ilk = d.buyuyenler.slice(0, 2).map(r => `<strong>${r.k3}</strong> (${fmtPct(r.yoy)})`).join(' ve ');
-    out.push(`Alt kırılımda ${ilk} yıllık bazda büyümektedir. Bu başlıklarda içerik derinliği ve iç linkleme çalışması öncelikli olarak ele alınabilir.`);
-  }
-
-  // 5) Marka fırsatı
-  if (d.markalar.length) {
-    const m = d.markalar[0];
-    out.push(`Katalogda yer almayan markalar arasında <strong>${m.brand}</strong> aylık ${fmtVol(m.aylik)} arama ve ${fmtPct(m.yoy)} büyüme ile öne çıkmaktadır. Katalog genişletme değerlendirmesine dahil edilebilir.`);
-  }
-
-  return out;
-}
+// Özet ve adımlar web raporuyla tek kaynaktan gelir (lib/rapor-metin.js).
+// Önceden burada birer kopyası vardı; iki kopya ayrı güncellenince e-posta ile
+// web farklı metin yazıyordu.
 
 function main() {
   const args = parseArgs(process.argv);
@@ -156,6 +77,13 @@ function main() {
   const trends = args.trendsStdin ? readTrendsStdin() : null;
   if (trends) d.yukselenler = trendsEkle(d.yukselenler, trends);
   d.trendsDili = trendsDili(trends);
+
+  // Adımlar e-postada da tam havuzdan üretilir: e-posta yalnızca ilk 30 başlığı
+  // yükler, anlık görüntü hangi betik önce çalışırsa ona göre yazılmasın.
+  const dTam = buildMailingData(D, ay, { yukselenLimit: 999, markaLimit: 999 });
+  if (trends) dTam.yukselenler = trendsEkle(dTam.yukselenler, trends);
+  dTam.trendsDili = d.trendsDili;
+  const adim = adimlariAl({ d: dTam, ay, raporYili: c.raporYili, trends, dizin: c.adimlarDizini, yenile: !!args.adimlariYenile, uret: buildAksiyonlar });
   const trendsKapsam = trends
     ? d.yukselenler.filter(r => r.trends).length
     : 0;
@@ -183,7 +111,8 @@ function main() {
     logolar: c.logolar,
     donemNotu,
     dashboardUrl: process.env.DASHBOARD_URL || null,
-    aksiyonlar: buildAksiyonlar(d),
+    aksiyonlar: adim.maddeler,
+    adimNotu: adim.not,
     ozet: buildOzet(d, Math.round((LIMITS.kwYukselisEsigi - 1) * 100), YIL_SON),
     kapsam: `${D.keywords.length.toLocaleString('tr-TR')} keyword`
       + (D.brands.length ? ` · ${D.brands.length.toLocaleString('tr-TR')} marka` : '')

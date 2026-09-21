@@ -158,7 +158,7 @@ function insightListe(giris, maddeler, dipnot) {
 
 function render(d, o) {
   const { brandName, agencyLabel, logolar, ayEtiketleri, aktifAy, excelUrl, kapsam,
-          yilSon, yilOnc, trendsSol, ozet, aksiyonlar } = o;
+          yilSon, yilOnc, trendsSol, ozet, aksiyonlar, adimNotu } = o;
   if (!logolar || !logolar.marka || !logolar.ajans) {
     // Logo bandı zorunlu (İçerik Dili Rehberi Bölüm 15.1). Eksikse üretim durur,
     // aksi halde kimlik satırı olmayan bir rapor teslim edilebilir.
@@ -510,7 +510,7 @@ footer{max-width:1560px;margin:0 auto;padding:0 24px 40px;font-size:11.5px;color
          ['Değişim', 'son 12 ay YoY', A.markaYoY], ['Endeks', `${d.ayKisa} ${yilSon}`, A.markaEndeks]],
         mrkSatir, ['l', 'r', 'r', 'r'])}</div>`) : ''}
 
-  ${bolum(S.aksiyon, N(S.aksiyon), 'Değerlendirilebilecek adımlar', null,
+  ${bolum(S.aksiyon, N(S.aksiyon), 'Değerlendirilebilecek adımlar', adimNotu || null,
     aksiyonlar.map(a => `<div class="adim"><span class="ok">&#10132;</span><div>${a}</div></div>`).join('')
     + (excelUrl ? `<p class="xls-alt"><a class="xls" href="${esc(excelUrl)}">Verileri Excel olarak indir</a></p>` : ''))}
 </main>

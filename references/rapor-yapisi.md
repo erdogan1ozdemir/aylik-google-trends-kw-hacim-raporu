@@ -72,6 +72,24 @@ Yıl bilgisi **giriş satırında bir kez** verilir, her maddede tekrarlanmaz.
 
 Veriden türetilir, uydurulmaz. Her madde `➔` ile başlar, somut sayı taşır ve öneri kipiyle biter.
 
+İki kaynaktan gelir:
+
+| Madde | Kaynak | Hangi aylarda |
+|---|---|---|
+| En keskin başlıklar, öne çıkan kategori, dirençli kategori, alt kırılım, marka | Keyword Planner geçmiş hacmi | Her ay |
+| Son 30 günde yükselenler, geçen yılın önünde olanlar, geçen yılın gerisinde kalanlar | Google Trends, son tamamlanmış hafta | Yalnızca aktif aylar (içinde bulunulan ay ve sonrası) |
+
+Trends maddelerinin eşikleri (`TRENDS_ADIM`): değişim en az %25, kıyas tabanı en az 10/100, seyrek seri yok, madde başına en fazla 3 başlık, hacme göre sıralı. Bir başlık yalnızca tek maddede geçer. İçinde bulunulan ayda "ay öncesinde" değil "şimdiden" denir.
+
+**Aylık anlık görüntü** (`lib/adimlar.js`, `proje.json` içinde `adimlarDizini`). Tablolar ve grafikler haftalık değişir, adımlar değişmez; markaya giden öneri listesi her hafta yeniden yazılırsa takip edilemez.
+
+- İlk üretimde `adimlar-YYYY-MM.json` kaydedilir
+- Aktif ayın adımları, Trends penceresinin sonu yeni bir takvim ayına geçtiğinde yenilenir (o ayın verisini taşıyan ilk haftalık tur)
+- Sayfanın ayı bittikten sonra yenilenmez; geçmiş ayın adımları ilk üretimden sonra hiç değişmez
+- `--adimlari-yenile` ile zorla yenilenir
+- Bölümün altında durum notu: "... haftası itibarıyla hazırlanmıştır ve her ayın ilk haftalık güncellemesinde yenilenir" / "... ay sonuna kadar sabit kalır" / "Bu ayın adımları nihaidir"
+- Web ve e-posta aynı anlık görüntüyü okur; e-posta adımları ilk 30 başlıktan değil tam havuzdan üretir
+
 ### Kapsam Notu
 
 Altbilgide: kaynak, keyword sayısı, kapsanan yıllar, Trends penceresi. İki veri kaynağının **farklı dönemleri kapsadığı** açıkça yazılır.

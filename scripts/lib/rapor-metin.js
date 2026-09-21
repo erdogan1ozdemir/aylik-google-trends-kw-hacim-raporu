@@ -68,6 +68,46 @@ function buildOzet(d, esikYuzde, yilSon) {
 }
 
 // Veriden türetilen, öneri kipinde aksiyon maddeleri.
+// Trends tabanlı adımlar yalnızca aktif aylarda (içinde bulunulan ay ve
+// sonrası) yazılır: "talep şimdiden hareketleniyor, hazırlık öne çekilebilir"
+// geçmiş bir ay için anlamsızdır. Eşikler: yön değişimi en az %25, kıyas
+// tabanı en az 10/100 (2'den 6'ya çıkış "+%200" diye okunmasın), seyrek seri yok.
+const TRENDS_ADIM = { minDegisim: 0.25, minTaban: 10, adet: 3 };
+
+function trendsAdimlari(d) {
+  const L = d.trendsDili;
+  if (!L || L.donmus) return [];
+  const hafta = L.haftaTarih ? ` (${L.haftaTarih} haftası itibarıyla)` : '';
+  const olculen = d.yukselenler.filter(r => r.trends && !r.trends.seyrek);
+  const hacimSira = (a, b) => (b.hacim25 || 0) - (a.hacim25 || 0);
+  // Bir başlık tek maddede geçer: aynı başlığın hem "hazırlığı öne çek" hem
+  // "bütçeyi temkinli kur" maddesinde görünmesi okuyana çelişki gibi gelir.
+  const kullanilan = new Set();
+  const sec = (kosul) => {
+    const rs = olculen.filter(r => !kullanilan.has(r.kw) && kosul(r.trends)).sort(hacimSira).slice(0, TRENDS_ADIM.adet);
+    rs.forEach(r => kullanilan.add(r.kw));
+    return rs;
+  };
+  const liste = (rs, alan) => rs.map(r => `<strong>${r.kw}</strong> (${fmtPct(r.trends[alan])})`).join(', ');
+  const out = [];
+
+  const erken = sec(t => t.otuzGunOnce >= TRENDS_ADIM.minTaban && t.gun30Fark >= TRENDS_ADIM.minDegisim);
+  if (erken.length) {
+    // Sayfanın ayı içindeysek "ay öncesinde" denmez
+    const zaman = d.adimBaglam && d.adimBaglam.buAy ? 'şimdiden' : `${d.ayAdi} öncesinde`;
+    out.push(`Son 30 günde arama ilgisi belirgin biçimde yükselen başlıklar arasında ${liste(erken, 'gun30Fark')} öne çıkmaktadır${hafta}. Talep ${zaman} hareketlendiği için bu başlıklarda sayfa ve kampanya hazırlığının öne çekilmesi değerlendirilebilir.`);
+  }
+  const onde = sec(t => t.gecenYil >= TRENDS_ADIM.minTaban && t.yoyFark >= TRENDS_ADIM.minDegisim);
+  if (onde.length) {
+    out.push(`Geçen yılın aynı haftasına göre daha yüksek ilgi gören başlıklar arasında ${liste(onde, 'yoyFark')} yer almaktadır. Bu başlıklarda stok ve görünürlük planının geçen yıl seviyesinin üzerinde kurulması potansiyel taşımaktadır.`);
+  }
+  const geride = sec(t => t.gecenYil >= TRENDS_ADIM.minTaban && t.yoyFark <= -TRENDS_ADIM.minDegisim);
+  if (geride.length) {
+    out.push(`Geçen yılın aynı haftasının gerisinde seyreden başlıklar arasında ${liste(geride, 'yoyFark')} yer almaktadır. Bu başlıklarda bütçe ve stok planının geçen yılın hacmi yerine güncel talebe göre gözden geçirilmesi değerlendirilebilir.`);
+  }
+  return out;
+}
+
 function buildAksiyonlar(d) {
   const out = [];
   const ay = d.ayAdi;
@@ -78,6 +118,9 @@ function buildAksiyonlar(d) {
     const liste = enYuksek.map(r => `<strong>${r.kw}</strong> (${fmtIdx(r.endeks)})`).join(', ');
     out.push(`${ay} ayında yıl ortalamasının en belirgin üzerine çıkan başlıklar ${liste} olarak öne çıkmaktadır. İlgili listeleme sayfalarının içerik ve kampanya hazırlığının ay başlamadan tamamlanması değerlendirilebilir.`);
   }
+
+  // Aktif aylarda son 30 günün Trends verisinden türeyen adımlar
+  out.push(...trendsAdimlari(d));
 
   // 2) Mevsimsel olarak öne çıkan kategori
   const oneCikan = d.altKategoriler.filter(r => r.endeks != null && r.endeks >= 1.10)
@@ -132,4 +175,4 @@ function sutunAciklamalari(d, yilSon, yilOnc, marka = 'Marka') {
 }
 
 
-module.exports = { buildOzet, buildAksiyonlar, sutunAciklamalari, fmtVol, fmtPct, fmtIdx };
+module.exports = { buildOzet, buildAksiyonlar, trendsAdimlari, TRENDS_ADIM, sutunAciklamalari, fmtVol, fmtPct, fmtIdx };

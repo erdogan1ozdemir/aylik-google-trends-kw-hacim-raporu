@@ -373,7 +373,7 @@ function sutunAciklamalari(d, yilSon, yilOnc, brandName = 'Marka') {
   };
 }
 
-function render(d, { brandName, agencyLabel, donemNotu, dashboardUrl, aksiyonlar, ozetCumle, kapsam, yilSon = 2025, yilOnc = 2024, trendsSol = '', genislik = 640, grafikLimit = 8, ozet = null, excelUrl = null, excelAd = null }) {
+function render(d, { brandName, agencyLabel, donemNotu, dashboardUrl, aksiyonlar, adimNotu = null, ozetCumle, kapsam, yilSon = 2025, yilOnc = 2024, trendsSol = '', genislik = 640, grafikLimit = 8, ozet = null, excelUrl = null, excelAd = null }) {
   const A = sutunAciklamalari(d, yilSon, yilOnc, brandName);
   const L = d.trendsDili || trendsDili(null);
 
@@ -587,6 +587,7 @@ ${tooltipStil()}
 
   ${bolumBasligi(N(), 'Değerlendirilebilecek adımlar', null)}
   <tr><td style="padding:15px 28px 0">
+    ${adimNotu ? `<p style="margin:0 0 12px;font-size:12px;color:${C.ink3}">${esc(adimNotu)}</p>` : ''}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${aksiyonHtml}</table>
   </td></tr>
 

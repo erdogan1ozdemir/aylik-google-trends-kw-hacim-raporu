@@ -13,6 +13,7 @@ const web = require('./lib/web-template');
 const { buildOzet, buildAksiyonlar, sutunAciklamalari } = require('./lib/rapor-metin');
 
 const { yukle } = require('./lib/proje');
+const { adimlariAl } = require('./lib/adimlar');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -22,6 +23,7 @@ for (let i = 2; i < process.argv.length; i++) {
   else if (process.argv[i] === '--out') args.out = process.argv[++i];
   else if (process.argv[i] === '--config') args.config = process.argv[++i];
   else if (process.argv[i] === '--trends-stdin') args.trendsStdin = true;
+  else if (process.argv[i] === '--adimlari-yenile') args.adimlariYenile = true;
 }
 const ay = args.ay != null ? args.ay - 1 : new Date().getMonth();
 
@@ -54,6 +56,9 @@ const ayEtiketleri = TR_SHORT.map((kisa, i) => ({
   url: i === ay ? null : (HAZIR[i + 1] || null),
 })).filter((_, i) => i >= c.ilkAy - 1);   // Öncesi için çalışma yok
 
+// Adımlar aylık anlık görüntüden gelir; haftalık turda değişmez (lib/adimlar.js)
+const adim = adimlariAl({ d, ay, raporYili: RAPOR_YILI, trends, dizin: c.adimlarDizini, yenile: !!args.adimlariYenile, uret: buildAksiyonlar });
+
 const html = web.render(d, {
   brandName: c.marka,
   agencyLabel: c.ajans,
@@ -65,7 +70,8 @@ const html = web.render(d, {
     + (trends ? ` | ${d.trendsDili.ozetEtiketi}: Google Trends · ${trendsSol} - ${trends.tarih || 'güncel'}` : ''),
   yilSon: YIL_SON, yilOnc: YIL_ONC, trendsSol,
   ozet: buildOzet(d, Math.round((LIMITS.kwYukselisEsigi - 1) * 100), YIL_SON),
-  aksiyonlar: buildAksiyonlar(d),
+  aksiyonlar: adim.maddeler,
+  adimNotu: adim.not,
   sutunAciklama: sutunAciklamalari(d, YIL_SON, YIL_ONC, c.marka),
 });
 
