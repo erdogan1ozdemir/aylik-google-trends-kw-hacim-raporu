@@ -14,6 +14,8 @@
 // yüzde işareti sayıdan önce (-%16), ondalık ayırıcı nokta, em dash yok,
 // emoji yok, öneriler "-ebilir" kipinde.
 
+const { trendsDili } = require('./mailing-data');
+
 const C = {
   teal: '#10332F',
   coral: '#FF7B52',
@@ -193,7 +195,7 @@ function trendKarti(r, solEtiket, yilSon, ayKisa) {
               <span style="color:${C.ink3}">· ${esc(ayKisa)} ${yilSon} · endeks ${fmtIdx(r.endeks)}</span>
             </div>
             <div style="margin-top:4px;font-size:11.5px;color:${C.ink2}">
-              Trends bu hafta <strong style="color:${C.ink}">${t.simdi}</strong><span style="color:${C.ink3}">/100</span>${notIsareti(t, r.kw)}
+              Trends son hafta <strong style="color:${C.ink}">${t.simdi}</strong><span style="color:${C.ink3}">/100</span>${notIsareti(t, r.kw)}
               <span style="color:${C.ink3}"> · son 4 haftada ${esc(t.durum.toLocaleLowerCase('tr-TR'))}</span>
             </div>
           </td>
@@ -356,7 +358,7 @@ function sutunAciklamalari(d, yilSon, yilOnc, brandName = 'Marka') {
     hacim: `Google Keyword Planner · ${ay} ${yilSon} aylık ortalama arama hacmi, Türkiye. Google bu değerleri bantlayarak verdiği için yön göstergesi olarak okunmalıdır.`,
     endeks: `${ay} ${yilSon} hacminin, aynı terimin ${yilSon} yıl ortalamasına oranı. 1.00x yıl ortalamasına eşit demektir; 2.00x, terimin bu ayda yıl ortalamasının iki katı arandığını gösterir.`,
     degisim: `${ay} ${yilOnc} ile ${ay} ${yilSon} arama hacimleri arasındaki yüzde değişim. Mevsimsellikten bağımsız olarak talebin yıllık yönünü verir.`,
-    canli: `Google Trends · terimin son 12 aylık haftalık serisi, bu hafta itibarıyla. 0-100 ölçeği her terimin kendi 12 aylık zirvesine göredir, terimler arasında kıyaslanmaz. Alt satırlar iki ayrı kıyastır: son 30 gün öncesine ve geçen yılın aynı haftasına göre değişim.`,
+    canli: `Google Trends · terimin 53 haftalık serisi, ${d.trendsDili ? d.trendsDili.sonHafta : 'son hafta'} itibarıyla. 0-100 ölçeği her terimin kendi 53 haftalık penceresindeki zirvesine göredir, terimler arasında kıyaslanmaz. Alt satırlar iki ayrı kıyastır: son 30 gün öncesine ve geçen yılın aynı haftasına göre değişim.`,
     altKategori: `${brandName} kategori ağacının Kat 2 seviyesi. Alt satır, bağlı olduğu Kat 1 ana kategorisidir.`,
     katHacim: `Kategoriye bağlı tüm terimlerin ${ay} ${yilSon} arama hacimleri toplamı.`,
     fark: `Kategorinin ${ay} ayındaki yıllık değişimi ile yıl genelindeki yıllık değişimi arasındaki puan farkı. Pozitif değer, kategorinin bu ayda yıl geneline kıyasla daha dirençli seyrettiğine işaret eder.`,
@@ -373,6 +375,7 @@ function sutunAciklamalari(d, yilSon, yilOnc, brandName = 'Marka') {
 
 function render(d, { brandName, agencyLabel, donemNotu, dashboardUrl, aksiyonlar, ozetCumle, kapsam, yilSon = 2025, yilOnc = 2024, trendsSol = '', genislik = 640, grafikLimit = 8, ozet = null, excelUrl = null, excelAd = null }) {
   const A = sutunAciklamalari(d, yilSon, yilOnc, brandName);
+  const L = d.trendsDili || trendsDili(null);
 
   // 700px üzeri kap = tarayıcıda açılan web sürümü
   PROSE_MAX = genislik > 700 ? 780 : null;
@@ -514,17 +517,17 @@ ${tooltipStil()}
     [
       `<strong>Endeks</strong> - ${esc(d.ayAdi)} ${yilSon} hacminin, aynı başlığın ${yilSon} yıl ortalamasına oranı. "Bu ay aranıyor mu" sorusunu yanıtlar.`,
       `<strong>Değişim</strong> - ${esc(d.ayKisa)} ${yilOnc} ile ${esc(d.ayKisa)} ${yilSon} arasındaki fark. "Talep büyüyor mu" sorusunu yanıtlar.`,
-      ...(trendsVar ? [`<strong>Canlı</strong> - Google Trends'ten bu haftanın değeri; altında iki ayrı kıyas yer alır: son 30 gün öncesine göre ve geçen yılın aynı haftasına göre değişim.`] : []),
+      ...(trendsVar ? [`<strong>${L.sutun}</strong> - Google Trends'ten ${esc(L.sonHafta)} değeri; altında iki ayrı kıyas yer alır: son 30 gün öncesine göre ve geçen yılın aynı haftasına göre değişim.`] : []),
       ...(CSS_TOOLTIP && trendsVar ? [`Arama adına tıklandığında ilgili başlığın Google Trends grafiğine gidilmektedir.`] : []),
     ],
     trendsVar
-      ? `Bir başlık son 30 günde yükselirken geçen yılın altında kalabilir; bunlar farklı sorulardır. Canlı kolonundaki 0-100 ölçeği her başlığın kendi son 12 ayına göredir, başlıklar arasında kıyaslanmaz.`
+      ? `Bir başlık son 30 günde yükselirken geçen yılın altında kalabilir; bunlar farklı sorulardır. ${L.sutun} kolonundaki 0-100 ölçeği her başlığın kendi 53 haftalık penceresine göredir, başlıklar arasında kıyaslanmaz.`
       : null
   )}
 
   ${tablo(
     [['Arama', null, A.arama], ['Hacim', `${d.ayKisa} ${yilSon}`, A.hacim], ['Endeks', `${yilSon} ort.`, A.endeks], ['Değişim', `${d.ayKisa} ${yilOnc}→${String(yilSon).slice(2)}`, A.degisim]]
-      .concat(trendsVar ? [['Canlı', 'bu hafta', A.canli]] : []),
+      .concat(trendsVar ? [[L.sutun, 'son hafta', A.canli]] : []),
     yukSatir,
     { hizalama: trendsVar ? ['l', 'r', 'r', 'r', 'r'] : ['l', 'r', 'r', 'r'] })}
 
@@ -540,15 +543,16 @@ ${tooltipStil()}
 
   ${trendsVar ? `
   ${bolumBasligi(N(), 'Google Trends Insight\'ları',
-    `Listedeki ${d.yukselenler.filter(r => r.trends).length} başlığın Google Trends üzerindeki güncel seyri.${CSS_TOOLTIP ? ' Bölüm kendi içinde kaydırılabilir.' : ''}`)}
+    `Listedeki ${d.yukselenler.filter(r => r.trends).length} başlığın Google Trends üzerindeki ${L.donmus ? 'ay sonundaki' : 'güncel'} seyri.${CSS_TOOLTIP ? ' Bölüm kendi içinde kaydırılabilir.' : ''}`)}
   ${insightListe(
     'Grafiklerin okunuşu:',
     [
-      `Sol uç <strong>${esc(trendsSol)}</strong>, sağ uç bu hafta. Koyu renkli bölüm son 30 günü işaretlemektedir.`,
-      `Çubuğun üzerine gelindiğinde ilgili haftanın tarihi ve değeri görüntülenmektedir.`,
-      `0-100 ölçeği her başlığın kendi son 12 aylık zirvesine göredir; başlıklar arasında kıyaslanmaz.`,
+      `Sol uç <strong>${esc(trendsSol)}</strong>, sağ uç ${esc(L.sonHafta)}. Koyu renkli bölüm son 30 günü işaretlemektedir.`,
+      // E-posta istemcisinde balon açılmaz; açılmayan balonu vaat etmemek için yalnızca web kabında yazılır
+      ...(CSS_TOOLTIP ? [`Çubuğun üzerine gelindiğinde ilgili haftanın tarihi ve değeri görüntülenmektedir.`] : []),
+      `0-100 ölçeği her başlığın kendi 53 haftalık penceresindeki zirvesine göredir; başlıklar arasında kıyaslanmaz.`,
     ],
-    'Bu bölüm canlı Google Trends verisine dayanır. Yukarıdaki tablolar Google Keyword Planner mutlak hacimlerinden gelir ve farklı dönemleri kapsar.'
+    `Bu bölüm ${L.kaynak} dayanır. Yukarıdaki tablolar Google Keyword Planner mutlak hacimlerinden gelir ve farklı dönemleri kapsar.`
   )}
   ${CSS_TOOLTIP ? `<tr><td style="padding:4px 28px 0"><div class="trend-kaydir">` : ''}
   ${CSS_TOOLTIP ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">` : ''}

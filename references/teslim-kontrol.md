@@ -11,7 +11,9 @@ Her ay, teslimden önce.
 
 ## Trends
 
-- [ ] Bütün keyword'ler **aynı gün** çekildi
+- [ ] Bütün keyword'ler **aynı pencereyle** çekildi; pencere Pazar başlıyor, son tamamlanmış Cumartesi bitiyor, 53 kova (`dagit.py` doğruluyor)
+- [ ] Geçmiş aylar kendi ay sonu penceresinde; aktif aylar ortak pencerede
+- [ ] Donmuş sayfalarda "Canlı" ve "bu hafta" yok (`grep -c "Canlı\|bu hafta"` = 0)
 - [ ] Her keyword **ayrı istekte** çekildi
 - [ ] `seriBaslangic` çıktıda var, grafik ekseni bundan türüyor
 - [ ] Jenerik tek kelimelik başlıklarda anlam karışması kontrol edildi; vekil terim gerekiyorsa eklendi ve raporda belirtildi

@@ -8,7 +8,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { buildMailingData, trendsEkle, TR_MONTHS, TR_SHORT, LIMITS } = require('./lib/mailing-data');
+const { buildMailingData, trendsEkle, trendsDili, TR_MONTHS, TR_SHORT, LIMITS } = require('./lib/mailing-data');
 const web = require('./lib/web-template');
 const { buildOzet, buildAksiyonlar, sutunAciklamalari } = require('./lib/rapor-metin');
 
@@ -36,6 +36,7 @@ if (args.trendsStdin) {
   if (raw.trim()) trends = JSON.parse(raw);
 }
 if (trends) d.yukselenler = trendsEkle(d.yukselenler, trends);
+d.trendsDili = trendsDili(trends);
 
 const trendsSol = (() => {
   if (!trends) return '';
@@ -61,7 +62,7 @@ const html = web.render(d, {
   aktifAy: { yil: RAPOR_YILI },
   excelUrl: c.excelUrl,
   kapsam: `${D.keywords.length.toLocaleString('tr-TR')} keyword · ${D.brands.length.toLocaleString('tr-TR')} marka · ${YIL_ONC} ve ${YIL_SON} takvim yılları`
-    + (trends ? ` | Canlı arama ilgisi: Google Trends · ${trendsSol} - ${trends.tarih || 'güncel'}` : ''),
+    + (trends ? ` | ${d.trendsDili.ozetEtiketi}: Google Trends · ${trendsSol} - ${trends.tarih || 'güncel'}` : ''),
   yilSon: YIL_SON, yilOnc: YIL_ONC, trendsSol,
   ozet: buildOzet(d, Math.round((LIMITS.kwYukselisEsigi - 1) * 100), YIL_SON),
   aksiyonlar: buildAksiyonlar(d),

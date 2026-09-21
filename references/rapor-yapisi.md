@@ -41,6 +41,8 @@ Her kartta: başlık, kategori, arama hacmi + endeks, Trends değeri + durum, 53
 
 - Son 30 gün çubukları coral, öncesi nötr gri
 - Çubuğun üzerine gelince hafta tarihi ve değeri açılır
+- "Bu hafta" denmez: son kova son tamamlanmış haftadır ve tarihiyle yazılır ("son hafta (13-19 Eyl 2026)")
+- Aktif sayfada sütun **Canlı**, donmuş geçmiş ay sayfasında **Ay Sonu** adını taşır; kaynak notu "haftalık güncellenen" / "ay sonunda sabitlenmiş" der. İfadelerin tek kaynağı `trendsDili()`
 - Yükselen başlıklar tablosundaki arama adı ilgili grafiğe bağlanır
 
 ## Metin Kuralları

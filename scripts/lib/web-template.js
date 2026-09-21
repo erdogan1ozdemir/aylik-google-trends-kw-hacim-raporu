@@ -8,7 +8,7 @@
 //
 // Dil ve biçim İçerik Dili Rehberi [A] kurumsal rejimine göre.
 
-const { LIMITS } = require('./mailing-data');
+const { LIMITS, trendsDili } = require('./mailing-data');
 
 const C = {
   teal: '#10332F', coral: '#FF7B52', coralDeep: '#E85F36', coralTint: '#FFE3D8',
@@ -85,7 +85,7 @@ function trendKarti(r, solEtiket, ayKisa, yilSon) {
         <div class="tkart-kw">${esc(r.kw)}</div>
         <div class="tkart-kat">${esc(r.k1)}${r.k2 ? ' · ' + esc(r.k2) : ''}</div>
         <div class="tkart-meta">Arama hacmi <b>${fmtVol(r.hacim25)}</b> <span class="soluk">· ${esc(ayKisa)} ${yilSon} · endeks ${fmtIdx(r.endeks)}</span></div>
-        <div class="tkart-meta">Trends bu hafta <b>${t.simdi}</b><span class="soluk">/100</span>${not ? `<span${tipAttr(not)} class="uyari">*</span>` : ''}<span class="soluk"> · son 4 haftada ${esc(t.durum.toLocaleLowerCase('tr-TR'))}</span></div>
+        <div class="tkart-meta">Trends son hafta <b>${t.simdi}</b><span class="soluk">/100</span>${not ? `<span${tipAttr(not)} class="uyari">*</span>` : ''}<span class="soluk"> · son 4 haftada ${esc(t.durum.toLocaleLowerCase('tr-TR'))}</span></div>
       </div>
       <div class="tkart-sag">
         <div class="metrik"><span>Geçen yıl aynı hafta</span>${rozet(t.yoyFark)}</div>
@@ -179,17 +179,22 @@ function render(d, o) {
   const satirAttr = (liste) => (i) => ` data-k1="${esc(liste[i].k1)}" data-k2="${esc(liste[i].k2 || '')}"`;
 
   // —— Yükselen başlıklar ——
+  const canliVar = trendliler.length > 0;
+  const L = d.trendsDili || trendsDili(null);
   const yukSatir = d.yukselenler.map(r => [
     (r.trends ? `<a class="kwl" href="#${kwId(r.kw)}">${esc(r.kw)}</a>` : `<b>${esc(r.kw)}</b>`)
       + `<i class="alt">${esc(r.k1)}</i>`,
     `<b>${fmtVol(r.hacim25)}</b>`,
     `<span class="endeks">${fmtIdx(r.endeks)}</span>`,
     rozet(r.yoy),
-    r.trends
+    // Canlı sütunu yalnızca en az bir ölçüm varsa basılır; hiç Trends yokken
+    // sütun baştan sona tire dolar ve başlığındaki açıklama karşılığı olmayan
+    // bir metriği anlatır.
+    ...(canliVar ? [r.trends
       ? `<b>${r.trends.simdi}</b><span class="soluk">/100</span>`
         + `<i class="alt">son 30 gün ${fmtPct(r.trends.gun30Fark)}</i>`
         + `<i class="alt">geçen yıl ${fmtPct(r.trends.yoyFark)}</i>`
-      : `<span class="bos" title="Bu başlık için Google Trends ölçümü yapılmamıştır.">-</span>`,
+      : `<span class="bos" title="Bu başlık için Google Trends ölçümü yapılmamıştır.">-</span>`] : []),
   ]);
 
   const keskinSatir = d.keskinler.map(r => [
@@ -262,6 +267,8 @@ a{color:inherit}
 .aytabs{position:sticky;top:var(--appbar-h,64px);z-index:59;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid ${C.line}}
 .aytabs-in{max-width:1560px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:12px}
 .aytab-liste{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+/* Liste taşıyorsa kenarlar soluklaşır: kaydırma çubuğu gizli olduğu için devamı olduğunu bu gösterir */
+.aytab-liste.tasar{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)}
 .aytabs .xls{margin-left:auto;flex-shrink:0}
 .aytab{padding:11px 15px;font-size:13px;font-weight:600;color:${C.ink3};text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap}
 .aytab:hover{color:${C.ink}}
@@ -416,14 +423,17 @@ footer{max-width:1560px;margin:0 auto;padding:0 24px 40px;font-size:11.5px;color
     insightListe('Kolonların okunuşu:', [
       `<b>Endeks</b> - ${esc(d.ayAdi)} ${yilSon} hacminin, aynı başlığın ${yilSon} yıl ortalamasına oranı. "Bu ay aranıyor mu" sorusunu yanıtlar.`,
       `<b>Değişim</b> - ${esc(d.ayKisa)} ${yilOnc} ile ${esc(d.ayKisa)} ${yilSon} arasındaki fark. "Talep büyüyor mu" sorusunu yanıtlar.`,
-      `<b>Canlı</b> - Google Trends'ten bu haftanın değeri ve iki ayrı kıyas: son 30 gün öncesine ve geçen yılın aynı haftasına göre.`,
-      `Arama adına tıklandığında ilgili başlığın Google Trends grafiğine gidilmektedir.`,
-    ], 'Bir başlık son 30 günde yükselirken geçen yılın altında kalabilir; bunlar farklı sorulardır. 0-100 ölçeği her başlığın kendi son 12 ayına göredir, başlıklar arasında kıyaslanmaz.')
+      ...(canliVar ? [
+        `<b>${L.sutun}</b> - Google Trends'ten ${esc(L.sonHafta)} değeri ve iki ayrı kıyas: son 30 gün öncesine ve geçen yılın aynı haftasına göre.`,
+        `Arama adına tıklandığında ilgili başlığın Google Trends grafiğine gidilmektedir.`,
+      ] : []),
+    ], canliVar ? 'Bir başlık son 30 günde yükselirken geçen yılın altında kalabilir; bunlar farklı sorulardır. 0-100 ölçeği her başlığın kendi 53 haftalık penceresine göredir, başlıklar arasında kıyaslanmaz.' : null)
     + filtreCubugu(S.yuk, kat1ler, kat2ler, d.yukselenler.length, 'başlık')
     + `<div class="kaydir">${tablo(
         [['Arama', null, A.arama], ['Hacim', `${d.ayKisa} ${yilSon}`, A.hacim], ['Endeks', `${yilSon} ort.`, A.endeks],
-         ['Değişim', `${d.ayKisa} ${yilOnc}→${String(yilSon).slice(2)}`, A.degisim], ['Canlı', 'Google Trends', A.canli]],
-        yukSatir, ['l', 'r', 'r', 'r', 'r'], satirAttr(d.yukselenler))}</div>`)}
+         ['Değişim', `${d.ayKisa} ${yilOnc}→${String(yilSon).slice(2)}`, A.degisim],
+         ...(canliVar ? [[L.sutun, 'Google Trends', A.canli]] : [])],
+        yukSatir, canliVar ? ['l', 'r', 'r', 'r', 'r'] : ['l', 'r', 'r', 'r'], satirAttr(d.yukselenler))}</div>`)}
 
   ${bolum(S.keskin, N(S.keskin), 'En keskin mevsimsel yükselişler',
     'Hacim sıralamasında geride kalan, ancak kendi yıl ortalamasına göre en belirgin ayrışan başlıklar.',
@@ -440,10 +450,10 @@ footer{max-width:1560px;margin:0 auto;padding:0 24px 40px;font-size:11.5px;color
   ${trendliler.length ? bolum(S.trends, N(S.trends), "Google Trends Insight'ları",
     `${trendliler.length} başlığın Google Trends üzerindeki haftalık seyri.`,
     insightListe('Grafiklerin okunuşu:', [
-      `Sol uç <b>${esc(trendsSol)}</b>, sağ uç bu hafta. Koyu renkli bölüm son 30 günü işaretlemektedir.`,
+      `Sol uç <b>${esc(trendsSol)}</b>, sağ uç ${esc(L.sonHafta)}. Koyu renkli bölüm son 30 günü işaretlemektedir.`,
       'Çubuğun üzerine gelindiğinde ilgili haftanın tarihi ve değeri görüntülenmektedir.',
-      '0-100 ölçeği her başlığın kendi son 12 aylık zirvesine göredir; başlıklar arasında kıyaslanmaz.',
-    ], 'Bu bölüm canlı Google Trends verisine dayanır. Yukarıdaki tablolar Google Keyword Planner mutlak hacimlerinden gelir ve farklı dönemleri kapsar.')
+      '0-100 ölçeği her başlığın kendi 53 haftalık penceresindeki zirvesine göredir; başlıklar arasında kıyaslanmaz.',
+    ], `Bu bölüm ${L.kaynak} dayanır. Yukarıdaki tablolar Google Keyword Planner mutlak hacimlerinden gelir ve farklı dönemleri kapsar.`)
     + filtreCubugu(S.trends, sayim(trendliler, 'k1'), sayim(trendliler, 'k2'), trendliler.length, 'başlık')
     + `<div class="kaydir" id="trend-kap">${trendliler.map(r => trendKarti(r, trendsSol, d.ayKisa, yilSon)).join('')}</div>`) : ''}
 
@@ -503,6 +513,20 @@ footer{max-width:1560px;margin:0 auto;padding:0 24px 40px;font-size:11.5px;color
   }
   barOlc();
   window.addEventListener('resize', barOlc);
+
+  // --- Ay sekmeleri ---
+  // On iki sekme dar ekranda sığmıyor ve liste kendi içinde kayıyor. Aktif ay
+  // listenin sonundaysa (Kas, Ara) görünür alanın dışında kalıyordu; açılışta
+  // ortaya alınır. scrollIntoView sayfayı da kaydırabildiği için scrollLeft kullanılır.
+  function sekmeOrtala(){
+    var L = document.querySelector('.aytab-liste'), a = L && L.querySelector('.aktif');
+    if (!L) return;
+    var tasar = L.scrollWidth > L.clientWidth + 1;
+    L.classList.toggle('tasar', tasar);
+    if (tasar && a) L.scrollLeft = Math.max(0, a.offsetLeft - L.offsetLeft - (L.clientWidth - a.offsetWidth) / 2);
+  }
+  sekmeOrtala();
+  window.addEventListener('resize', sekmeOrtala);
 
   // --- Açıklama balonu ---
   // Tek öge; hedefin altına konumlanır, ekran kenarına taşarsa içeri çekilir,

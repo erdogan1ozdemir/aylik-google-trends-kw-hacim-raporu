@@ -209,7 +209,7 @@ function donemOzeti(keywords, ay) {
 //
 // Girdi (stdin ile geçilir, diske yazılmaz):
 //   { tarih, kelimeler: { "<kw>": { seri: [<52-53 haftalık değer>] } } }
-// Seri kronolojiktir: ilk değer bir yıl önceki aynı hafta, son değer bu hafta.
+// Seri kronolojiktir: ilk değer bir yıl önceki aynı hafta, son değer son tamamlanmış hafta (çekim gününün haftası yarım kova olduğu için alınmaz).
 
 const HAFTA_30GUN = 4;   // 4 hafta ≈ 30 gün
 
@@ -293,6 +293,24 @@ function trendsDurumu(t, baslangic) {
 
 // Yükselen başlıklara Trends katmanını iliştirir. Veri gelmeyen kelimeler
 // null taşır; şablon o hücreyi boş gösterir (eksik veri maskelenmez).
+// Trends ifadelerinin tek kaynağı. Serinin son kovası çekim gününün haftası değil,
+// son tamamlanmış haftadır (trends-cekimi.md); "bu hafta" demek yanlış olur.
+// Geçmiş aylar ay sonunda dondurulur; o sayfalarda "Canlı" demek de yanlış olur.
+function trendsDili(tr) {
+  const donmus = !!(tr && tr.donmus);
+  const hafta = tr && tr.sonHafta ? tr.sonHafta : null;
+  return {
+    donmus,
+    sutun: donmus ? 'Ay Sonu' : 'Canlı',
+    haftaTarih: hafta || '',
+    sonHafta: hafta ? `son hafta (${hafta})` : 'son hafta',
+    kaynak: donmus
+      ? 'ay sonunda sabitlenmiş Google Trends verisine'
+      : 'haftalık güncellenen Google Trends verisine',
+    ozetEtiketi: donmus ? 'Ay sonu arama ilgisi' : 'Canlı arama ilgisi',
+  };
+}
+
 function trendsEkle(yukselenler, trendsGirdi) {
   if (!trendsGirdi || !trendsGirdi.kelimeler) return yukselenler;
   return yukselenler.map(r => ({
@@ -339,6 +357,6 @@ module.exports = {
   TR_MONTHS, TR_SHORT, LIMITS,
   ayEndeksi, ayOrtHacim, ayYoY,
   yukselenBasliklar, enKeskinYukselenler, kategoriTablosu, altKirilimBuyuyenler, markaFirsatlari, donemOzeti,
-  trendsDurumu, trendsEkle, canliIzlenecekler, haftaEtiketleri, SEYREK_ESIK,
+  trendsDurumu, trendsEkle, trendsDili, canliIzlenecekler, haftaEtiketleri, SEYREK_ESIK,
   buildMailingData,
 };

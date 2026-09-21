@@ -42,7 +42,18 @@ Girdi tek bir JSON: `keywords[]` (zorunlu) + `brands[]` (opsiyonel). Şema ve GK
 
 Yükselen başlıkların canlı seyri DataForSEO'dan çekilir. **Kural: her keyword ayrı istekte.** Toplu çekim düşük hacimli kelimeyi ezip kullanılamaz hale getirir. Ayrıntı, vekil terim ve seyrek veri: **references/trends-cekimi.md**
 
-Trends verisi diske yazılmaz, üretim script'ine stdin ile geçilir. Kimlik bilgisi gerekmez.
+Pencere `past_12_months` ile değil **açık tarihle** istenir: Pazar başlar, son tamamlanmış Cumartesi biter, 53 tam hafta. `past_12_months` çekim gününün yarım haftasını serinin sonuna ekler ve "şu an" değeri düşük okunur. Geçmiş aylar kendi ay sonu penceresiyle bir kez çekilip dondurulur.
+
+```bash
+node scripts/havuzlar.js --config proje.json > havuzlar.json
+python3 scripts/trends/plan.py havuzlar.json --yil 2026 --vekil vekil.json   # istek.json + pencere-plani.json, maliyeti yazar
+python3 scripts/trends/kimlik.py "$TMP/.curlrc"                              # dfs-mcp kimliğinden, 600 izin
+TRENDS_CURLRC="$TMP/.curlrc" python3 scripts/trends/cek.py istek.json ham.json
+python3 scripts/trends/dagit.py ham.json pencere-plani.json havuzlar.json veri.json
+rm "$TMP/.curlrc"
+```
+
+Kimlik dosyası oturumun geçici dizinine yazılır ve çekimden sonra silinir. `dagit.py` her ayın penceresini doğrular (Pazar, Cumartesi, 53 kova), anlam karışması şüphesi taşıyan tek kelimelik başlıkları listeler ve `trends-<ay>.json` dosyalarını yazar. Maliyeti `plan.py` çekimden önce yazar; kullanıcı onayı çekimden önce alınır.
 
 ### 3. Üretim
 
@@ -86,6 +97,8 @@ Bunlar tartışılıp karara bağlanmış noktalar. Yeniden açmadan önce neden
 |---|---|
 | "Mevsimsel yükselen" = **iki yılda da** yıl ortalamasının %15 üzeri | Tek yıllık sıçrama mevsimsellik kanıtı değil |
 | Trends her keyword için **ayrı istek** | 0-100 ölçeği istek içinde normalize; toplu çekim küçük kelimeyi eziyor |
+| Trends penceresi **son tamamlanmış Cumartesi**'de biter | `past_12_months` son kovası yarım hafta; ölçüldü: medyan -%11, 337 başlığın 51'inde boş kova |
+| Geçmiş ay **kendi ay sonu penceresiyle** dondurulur | Üç metrik de serinin son haftasına bağlı; Ocak sayfası bugünkü pencereyle Eylül'ü gösterir |
 | Trends penceresi GKP yıllarından **ayrı etiketlenir** | Trends son 12 ay, GKP takvim yılı. Karıştırmak "Eyl 24" gibi yanlış etiket üretir |
 | Rapor **tek HTML dosya**, logolar `data:` URI | İçerik güvenlik politikası dış kaynağı engelleyebiliyor, dosya taşınabilir kalmalı |
 | Kaydırılabilir tablo + filtre, kırpma yok | Havuzun tamamı gösterilir; "ilk 30" demek kalanı gizlemek olur |
@@ -100,9 +113,17 @@ Bunlar tartışılıp karara bağlanmış noktalar. Yeniden açmadan önce neden
 - **Marka adı şablonlara sabit yazılmaz.** `proje.json`dan gelir. Sızıntı kontrolü: `grep -ri "<önceki marka>" scripts/`
 - Dil ve biçim İçerik Dili Rehberi [A] rejimine tabidir: em dash yok, şapkalı harf yok, `%X` biçimi, `1.27x` çarpan, `➔` insight oku.
 
-## Aylık Tekrar
+## Haftalık ve Aylık Tekrar
 
-Ay değiştiğinde: `--ay` parametresi, `proje.json` içinde `hazirAylar` güncellemesi, Trends yeniden çekimi. Eşikler ve tanımlar **değiştirilmez** - aylar arası kıyas ancak sabit tanımla mümkün. Eşik değişecekse gerekçesi yazılır ve o ayın raporunda belirtilir.
+**Haftalık (Pazar veya Pazartesi):** yalnızca Trends güncellenir, Keyword Planner hacimleri değişmez. İçinde bulunulan ay ve sonrası ortak pencereyle yeniden çekilir, geçmiş aylar atlanır:
+
+```bash
+python3 scripts/trends/plan.py havuzlar.json --yil 2026 --donmuslari-atla
+```
+
+Hafta ortasında çekmek yeni bir hafta kazandırmaz; son tam Cumartesi aynı kalır, aynı pencere yeniden satın alınmış olur. Bir ayın son haftalık turu o ayın dondurma çekimidir; ertesi turda `dagit.py` o ayın dosyasını korur, yalnızca `donmus` işaretini açar ve sayfa yeniden üretildiğinde "Canlı" yerine "Ay Sonu" der.
+
+**Aylık:** ay değiştiğinde `proje.json` içinde `hazirAylar` güncellenir. Eşikler ve tanımlar **değiştirilmez** - aylar arası kıyas ancak sabit tanımla mümkün. Eşik değişecekse gerekçesi yazılır ve o ayın raporunda belirtilir.
 
 ## Kurulum
 

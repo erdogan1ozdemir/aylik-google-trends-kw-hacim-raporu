@@ -11,7 +11,8 @@ POST /v3/keywords_data/google_trends/explore/live
   "location_code": 2792,          // Türkiye. location_name kabul edilmiyor
   "language_code": "tr",
   "keywords": ["okul çantası"],   // TEK keyword
-  "time_range": "past_12_months",
+  "date_from": "2025-09-14",      // Pazar
+  "date_to": "2026-09-19",        // Cumartesi: son tamamlanmış hafta
   "item_types": ["google_trends_graph"]
 }]
 ```
@@ -28,13 +29,22 @@ Maliyet: istek başına yaklaşık **$0.011**. 100 keyword ≈ $1.10.
 
 Toplu çekimin maliyet avantajı (5 keyword tek istekte) veriyi geçersiz kıldığı için anlamsızdır.
 
-## Kural 2: Pencere bugüne göre kayar
+## Kural 2: Pencere açık tarihle istenir, son tamamlanmış haftada biter
 
-`past_12_months` bugünden geriye 52 hafta demektir. **İki farklı günde çekilen seriler hizalanmaz.**
+Google Trends haftaları **Pazar-Cumartesi**. `past_12_months` çekim gününün haftasını serinin sonuna **yarım kova** olarak ekler ve şablon "şu an" değerini, "geçen yıl aynı hafta" ve "son 30 günde" rozetlerini bu yarım kovadan okur.
 
-Ölçülen örnek: 2 Eylül'de çekilen seriler `2025-08-31` başlıyordu, 9 Eylül'de çekilenler `2025-09-07`. Karıştırmak "geçen yıl aynı hafta" referansını ve grafik eksenini bozar.
+Ölçülen örnek: 21 Eylül 2026 Pazartesi çekilen 337 seride son kova 20-26 Eylül, yani 2 günlük. Sonbahar yükselişi sürerken `son kova / önceki kova` medyanı **0.894** çıktı (önceki iki hafta 1.189 ve 1.082); 51 başlıkta son kova tamamen boştu, bir önceki haftada hiç boş yoktu. Rapor iki gün boyunca yükselen talebi düşüş gibi gösteriyordu.
 
-**Sonuç: bir raporun bütün keyword'leri aynı gün çekilir.** Kapsam genişletilecekse daha önce çekilenler de yeniden çekilir. Çıktıya `seriBaslangic` yazılır ve şablon ekseni bundan türetir.
+Kural:
+
+- `date_to` = çekim gününden önceki **son Cumartesi**
+- `date_from` = `date_to - 370 gün` (**Pazar**). Böylece tam 53 kova döner ve `seri[0]` ile `seri[52]` tam 52 hafta arayla aynı takvim haftasıdır
+- `date_from` Pazar değilse Google başlangıcı önceki Pazar'a kaydırır ve **54 kova** döner; "geçen yıl aynı hafta" bir hafta kayar. Ölçüldü: `2025-01-18` (Cumartesi) başlangıcı `2025-01-12`'ye kaydı
+- Dağıtım betiği her ayın penceresinin `(Pazar, Cumartesi, 53)` olduğunu doğrular, uymuyorsa durur
+
+Açık tarih kullanıldığı için aynı hafta içinde farklı günlerde yapılan çekimler de hizalanır. Yine de bir ayın bütün keyword'leri **aynı pencereyle** çekilir; çıktıya `seriBaslangic` yazılır ve şablon ekseni bundan türetir.
+
+**Haftalık güncelleme günü:** Pazar veya Pazartesi. Cumartesi biten hafta ertesi gün tam kovadır; hafta ortasında çekmek yeni bir hafta kazandırmaz, aynı pencereyi yeniden satın almak olur.
 
 ## Kural 3: Anlam karışması ve vekil terim
 
@@ -48,6 +58,8 @@ Tek kelimelik jenerik başlıklarda Trends farklı bir varlığı ölçebiliyor.
 
 Çok kelimeli spesifik başlıklarda (`okul çantası`, `beslenme çantası`) bu sorun yoktur.
 
+**Karışmayı bulmanın genel yolu: zirve ayı karşılaştırması.** Tek kelimelik her başlıkta Trends serisinin zirve ayı ile Keyword Planner'ın zirve ayı karşılaştırılır; aralarında üç ay ve üzeri fark varsa başlık incelemeye alınır. "Yaz zirveli tek kelime" gibi ay kuralları kullanılmaz: Haziran-Temmuz raporunda mayo ve şort da yaz zirvelidir ve hepsi yanlış alarm verir.
+
 ## Kural 4: Seyrek veri işaretlenir
 
 Google, arama hacmi eşiğinin altındaki haftalarda değer döndürmez. Haftaların %20'sinden fazlası boşsa (`SEYREK_ESIK`) başlık işaretlenir.
@@ -56,14 +68,34 @@ Google, arama hacmi eşiğinin altındaki haftalarda değer döndürmez. Haftala
 
 **Ölçüm yapılmadı ile veri gelmedi ayrı şeylerdir.** Excel'de satırın tümü `-` ise ölçüm yapılmamış, tek hücre `-` ise ölçülmüş ama o hafta veri gelmemiş demektir. Terim sözlüğünde bu ayrım açıkça yazılır.
 
+## Kural 5: Geçmiş aylar ay sonunda dondurulur
+
+Rapor sayfası bir aya aittir; üç Trends metriği de serinin **son haftasına** bağlıdır (`simdi = seri[n-1]`, `gecenYil = seri[0]`, `otuzGunOnce = seri[n-5]`). Ocak sayfasının penceresi Eylül'de bitiyorsa rozet Eylül'ü geçen Eylül'le kıyaslar, coral "son 30 gün" bandı Eylül'e düşer. Bu yüzden:
+
+| Ay durumu | Pencere sonu | Güncelleme |
+|---|---|---|
+| İçinde bulunulan ay ve sonrası | Son tamamlanmış Cumartesi | Haftalık, hepsi ortak pencere |
+| Geçmiş ay | Ayın içindeki son Cumartesi | Bir kez, sonra dondurulur |
+
+- Ay sonu Cumartesi'ye denk gelmiyorsa pencere ayın içindeki son Cumartesi'de biter; sonraki ayın günleri seriye girmez. Karşılığında ayın son 1-6 günü dışarıda kalır
+- Aktif bir ayın son haftalık güncellemesi, o ayın dondurma çekimidir. Ek istek gerekmez
+- 0-100 ölçeği pencere içindeki zirveye göre normalize edildiği için donmuş aylar ile aktif aylar arasında değer kıyası yapılmaz
+- Donmuş sayfada "Canlı" ve "bu hafta" denmez; şablon ifadeleri `donmus` alanından alır (`trendsDili()`)
+
+**Maliyet ve tekilleştirme.** Aktif aylar aynı pencereyi paylaştığı için bir keyword'ün serisi hepsini besler; havuzlar arasında tekrar eden keyword bir kez çekilir. Geçmiş aylarda bu mümkün değildir: Ocak ve Mart pencereleri farklıdır, aynı keyword iki ayrı istektir.
+
+Ölçülen örnek (Özdilek 2026): Oca-Ağu geçmiş ay havuzları toplam 1.491 istek ($16.40); aynı başlıklar ortak pencereyle çekilseydi 743 tekil istek olurdu. Fark, doğru anlamın tek seferlik bedelidir.
+
 ## Girdi Biçimi
 
 Script'e stdin ile geçilen JSON:
 
 ```json
 {
-  "tarih": "9 Kasım 2026",
-  "seriBaslangic": "2025-11-09",
+  "tarih": "7 Kasım 2026",
+  "seriBaslangic": "2025-11-02",
+  "sonHafta": "1-7 Kas 2026",
+  "donmus": false,
   "kelimeler": {
     "okul çantası": { "seri": [53, 21, 14, null, ...] },
     "kemer":        { "seri": [...], "vekil": "kemer modelleri" }
@@ -71,7 +103,7 @@ Script'e stdin ile geçilen JSON:
 }
 ```
 
-`seri` tam 53 haftalık dizi, eksik haftalar `null`. Diske yazılmaz:
+`seri` tam 53 haftalık dizi, eksik haftalar `null`. `tarih` pencerenin son günü, `sonHafta` son kovanın etiketi, `donmus` geçmiş ay işaretidir. Diske yazılmaz:
 
 ```bash
 node scripts/build-web.js --config proje.json --ay 11 --trends-stdin < trends.json
@@ -90,7 +122,10 @@ Havuzun tamamı çekilebilir (103 keyword ≈ $1.13) ya da hacme göre ilk N. Ka
 | Hata | Sonuç |
 |---|---|
 | Toplu çekim | Küçük hacimli keyword ezilir, sinyal kaybolur |
-| Farklı günlerde çekim | Seriler hizalanmaz, yıllık kıyas bozulur |
+| Farklı pencerelerle çekim | Seriler hizalanmaz, yıllık kıyas bozulur |
+| `past_12_months` | Son kova çekim gününün yarım haftası; "şu an" değeri düşük okunur |
+| `date_from` Pazar değil | 54 kova, "geçen yıl aynı hafta" bir hafta kayar |
+| Geçmiş ayı bugünkü pencereyle çekmek | Ocak sayfası Eylül hareketini gösterir |
 | GKP yıllarını Trends eksenine yazmak | Grafik yanlış yılı gösterir |
 | Boş haftayı 0 saymak | Düşüş varmış gibi görünür. `null` bırakılır |
 | Trends değerlerini keyword'ler arasında kıyaslamak | Ölçek keyword'e özel, kıyaslanamaz |

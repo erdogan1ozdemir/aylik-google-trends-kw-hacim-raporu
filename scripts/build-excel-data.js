@@ -7,7 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { buildMailingData, trendsEkle, TR_MONTHS, TR_SHORT } = require('./lib/mailing-data');
+const { buildMailingData, trendsEkle, trendsDili, TR_MONTHS, TR_SHORT } = require('./lib/mailing-data');
 
 const { yukle } = require('./lib/proje');
 
@@ -57,6 +57,7 @@ const cikti = {
     yilSon: YIL_SON, yilOnc: YIL_ONC,
     trendsTarih: trends ? (trends.tarih || '') : '',
     trendsBaslangic: trends ? (trends.seriBaslangic || '') : '',
+    trendsDil: trendsDili(trends),
     kwToplam: D.keywords.length, markaToplam: D.brands.length,
     havuzAdet: d.havuzAdet, sayfadaGosterilen: SAYFADA,
   },

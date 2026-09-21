@@ -23,7 +23,7 @@ function esc(s) {
 // Üç iş yapar: ayın yıl içindeki yerini söyler, bu tablonun kategorilere eşit
 // dağılmadığını adlarıyla ve sayılarıyla gösterir, sonra okuyucuyu aşağıdaki
 // listeye bağlar. Tek bir keyword üzerinden kurulmaz - örnek keyword seçmek
-// ayın hikâyesini o kelimenin şansına bırakıyordu.
+// ayın hikayesini o kelimenin şansına bırakıyordu.
 // Hangi yılın verisi olduğu her maddede açıkça yazılır; "yılın en düşük ayı"
 // ifadesi tek başına hangi yıl olduğunu söylemiyordu.
 function buildOzet(d, esikYuzde, yilSon) {
@@ -116,7 +116,7 @@ function sutunAciklamalari(d, yilSon, yilOnc, marka = 'Marka') {
     hacim: `Google Keyword Planner · ${ay} ${yilSon} aylık ortalama arama hacmi, Türkiye. Google bu değerleri bantlayarak verdiği için yön göstergesi olarak okunmalıdır.`,
     endeks: `${ay} ${yilSon} hacminin, aynı terimin ${yilSon} yıl ortalamasına oranı. 1.00x yıl ortalamasına eşit demektir; 2.00x, terimin bu ayda yıl ortalamasının iki katı arandığını gösterir.`,
     degisim: `${ay} ${yilOnc} ile ${ay} ${yilSon} arama hacimleri arasındaki yüzde değişim. Mevsimsellikten bağımsız olarak talebin yıllık yönünü verir.`,
-    canli: `Google Trends · terimin son 12 aylık haftalık serisi, bu hafta itibarıyla. 0-100 ölçeği her terimin kendi 12 aylık zirvesine göredir, terimler arasında kıyaslanmaz. Alt satırlar iki ayrı kıyastır: son 30 gün öncesine ve geçen yılın aynı haftasına göre değişim.`,
+    canli: `Google Trends · terimin 53 haftalık serisi, ${d.trendsDili ? d.trendsDili.sonHafta : 'son hafta'} itibarıyla. 0-100 ölçeği her terimin kendi 53 haftalık penceresindeki zirvesine göredir, terimler arasında kıyaslanmaz. Alt satırlar iki ayrı kıyastır: son 30 gün öncesine ve geçen yılın aynı haftasına göre değişim.`,
     altKategori: `${marka} kategori ağacının Kat 2 seviyesi. Alt satır, bağlı olduğu Kat 1 ana kategorisidir.`,
     katHacim: `Kategoriye bağlı tüm terimlerin ${ay} ${yilSon} arama hacimleri toplamı.`,
     fark: `Kategorinin ${ay} ayındaki yıllık değişimi ile yıl genelindeki yıllık değişimi arasındaki puan farkı. Pozitif değer, kategorinin bu ayda yıl geneline kıyasla daha dirençli seyrettiğine işaret eder.`,

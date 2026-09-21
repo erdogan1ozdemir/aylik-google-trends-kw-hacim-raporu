@@ -12,7 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { buildMailingData, trendsEkle, TR_MONTHS, LIMITS } = require('./lib/mailing-data');
+const { buildMailingData, trendsEkle, trendsDili, TR_MONTHS, LIMITS } = require('./lib/mailing-data');
 const { render, fmtVol, fmtPct, fmtIdx } = require('./lib/mailing-template');
 
 const { yukle } = require('./lib/proje');
@@ -58,7 +58,7 @@ function readTrendsStdin() {
 // Üç iş yapar: ayın yıl içindeki yerini söyler, bu tablonun kategorilere eşit
 // dağılmadığını adlarıyla ve sayılarıyla gösterir, sonra okuyucuyu aşağıdaki
 // listeye bağlar. Tek bir keyword üzerinden kurulmaz - örnek keyword seçmek
-// ayın hikâyesini o kelimenin şansına bırakıyordu.
+// ayın hikayesini o kelimenin şansına bırakıyordu.
 // Hangi yılın verisi olduğu her maddede açıkça yazılır; "yılın en düşük ayı"
 // ifadesi tek başına hangi yıl olduğunu söylemiyordu.
 function buildOzet(d, esikYuzde, yilSon) {
@@ -155,6 +155,7 @@ function main() {
   // Canlı Trends katmanı (varsa)
   const trends = args.trendsStdin ? readTrendsStdin() : null;
   if (trends) d.yukselenler = trendsEkle(d.yukselenler, trends);
+  d.trendsDili = trendsDili(trends);
   const trendsKapsam = trends
     ? d.yukselenler.filter(r => r.trends).length
     : 0;
@@ -187,7 +188,7 @@ function main() {
     kapsam: `${D.keywords.length.toLocaleString('tr-TR')} keyword`
       + (D.brands.length ? ` · ${D.brands.length.toLocaleString('tr-TR')} marka` : '')
       + ` · ${YIL_ONC} ve ${YIL_SON} takvim yılları`
-      + (trends ? ` | Canlı arama ilgisi: Google Trends · ${trendsSol} - ${trends.tarih || 'güncel'}` : ''),
+      + (trends ? ` | ${d.trendsDili.ozetEtiketi}: Google Trends · ${trendsSol} - ${trends.tarih || 'güncel'}` : ''),
     yilSon: YIL_SON,
     yilOnc: YIL_ONC,
     trendsSol,
