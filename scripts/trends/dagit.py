@@ -65,27 +65,34 @@ for m in range(1, 13):
 # Anlam karışması: Trends zirve ayı ile Keyword Planner zirve ayı uyuşmuyorsa
 # Trends başka bir varlığı ölçüyor olabilir (kemer -> Antalya'daki Kemer).
 # Yalnızca tek kelimelik başlıklara bakılır; çok kelimeli ifadelerde karışma nadirdir.
-def trends_zirve_ayi(v):
+def trends_aylik(v):
     s = v['seri']; b = dt.date.fromisoformat(v['baslangic'])
-    ay = Counter()
+    ay = {}
     for i, x in enumerate(s):
-        if x is not None: ay[(b + dt.timedelta(weeks=i, days=3)).month] += x
-    return max(ay, key=ay.get) if ay else None
+        if x is not None: ay.setdefault((b + dt.timedelta(weeks=i, days=3)).month, []).append(x)
+    return {m: sum(l) / len(l) for m, l in ay.items()}
 
 def ay_farki(a, b): d = abs(a - b) % 12; return min(d, 12 - d)
 
+# İki profil de gerçekten mevsimsel olmalı (zirve / ortalama >= 1.3). Düz
+# profilli başlıklarda Keyword Planner'ın "zirve ayı" bant gürültüsüdür ve
+# kural onları yanlış alarm olarak işaretliyordu (Özdilek: 19 -> 5).
+MEVSIM_ESIK = 1.3
 gorulen = set()
 for anahtar, v in ham.items():
     kw = v['kw']
     if ' ' in kw or 'seri' not in v or kw in gorulen or kw not in veri: continue
     gorulen.add(kw)
-    m25 = veri[kw]['m25']
+    tr = trends_aylik(v)
+    if len(tr) < 10: continue
+    m25 = veri[kw]['m25']; gm = sum(m25) / 12
+    if not gm: continue
     gkp = max(range(12), key=lambda i: m25[i]) + 1
-    tr = trends_zirve_ayi(v)
-    if tr and ay_farki(tr, gkp) >= 3:
-        sorun.append((kw, AY_TR[gkp-1], AY_TR[tr-1], v.get('vekil')))
+    tz = max(tr, key=tr.get); tort = sum(tr.values()) / len(tr)
+    if ay_farki(tz, gkp) >= 3 and m25[gkp - 1] / gm >= MEVSIM_ESIK and tr[tz] / tort >= MEVSIM_ESIK:
+        sorun.append((kw, AY_TR[gkp-1], AY_TR[tz-1], v.get('vekil')))
 print()
-print(f'tek kelimelik başlık: {len(gorulen)} | zirve ayı uyumsuz (>=3 ay): {len(sorun)}')
+print(f'tek kelimelik başlık: {len(gorulen)} | zirve ayı uyumsuz, iki profil de mevsimsel: {len(sorun)} (incele, vekil gerekirse ekle)')
 for kw, g, t, vk in sorun:
     print(f'   {kw:22} GKP zirvesi {g:8} Trends zirvesi {t:8}' + (f' (vekil: {vk})' if vk else ''))
 seyrek = sum(1 for v in ham.values() if 'seri' in v and sum(x is None for x in v['seri']) / 53 > 0.20)

@@ -44,7 +44,9 @@ Göz kontrolü yetmez. Ölçerek doğrula, ayrıntı `on-yuz-tuzaklari.md`:
 - [ ] **Sütun açıklamaları**: `th` üzerine gelince balon açılıyor, ekran içinde, son sütunda da
 - [ ] **Grafik çubukları**: üzerine gelince hafta tarihi ve değeri görünüyor
 - [ ] **Filtreler**: adetler toplamı toplamla eşit, çoklu seçim birleşiyor, Tümü sıfırlıyor
-- [ ] **Tablodan grafiğe atlama**: doğru karta gidiyor
+- [ ] **Tablodan grafiğe atlama**: ilk, orta ve son başlıkta, keskin tabloda, grafik filtresi açıkken ve 700px yüksek ekranda kart görünür alana geliyor
+- [ ] **Mobil içindekiler**: 375px'te düğme görünüyor, panel masaüstü listesinin kopyası, Escape / örtü / bağlantı kapatıyor
+- [ ] `scripts/tarayici-testi/sayfa.js` ve `mobil.js` her sayfada boş hata listesi döndürüyor
 - [ ] **Ay sekmeleri**: yalnızca hazır aylar bağlantılı
 - [ ] Konsol hatası yok
 

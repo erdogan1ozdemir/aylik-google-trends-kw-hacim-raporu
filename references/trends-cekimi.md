@@ -75,10 +75,11 @@ Rapor sayfası bir aya aittir; üç Trends metriği de serinin **son haftasına*
 | Ay durumu | Pencere sonu | Güncelleme |
 |---|---|---|
 | İçinde bulunulan ay ve sonrası | Son tamamlanmış Cumartesi | Haftalık, hepsi ortak pencere |
-| Geçmiş ay | Ayın içindeki son Cumartesi | Bir kez, sonra dondurulur |
+| Geçmiş ay | Ayın son gününü içeren haftanın Cumartesi'si | Bir kez, sonra dondurulur |
 
-- Ay sonu Cumartesi'ye denk gelmiyorsa pencere ayın içindeki son Cumartesi'de biter; sonraki ayın günleri seriye girmez. Karşılığında ayın son 1-6 günü dışarıda kalır
-- Aktif bir ayın son haftalık güncellemesi, o ayın dondurma çekimidir. Ek istek gerekmez
+- Ayın son günleri seriden düşmez: son kova, ayın son gününü içeren haftadır. Ay sonu Cumartesi'ye denk gelmiyorsa bu haftanın bir kısmı sonraki aya taşar (0-6 gün). İlk sürümde pencere ayın içindeki son Cumartesi'de bitiyordu; Temmuz sayfası 19-25 Temmuz'da bitiyor, 26-31 Temmuz görünmüyordu. Kullanıcı kararıyla değişti
+- Uç durum: ay sonu Pazar ise (Mayıs 2026) son kova 31 May - 6 Haz olur ve ayın yalnızca 1 gününü taşır
+- Aktif bir ayın son haftalık güncellemesi, o ayın dondurma çekimidir. Ek istek gerekmez. Ay, son gününü içeren hafta tamamlanana kadar aktif kalır (Eylül 2026: 3 Ekim)
 - 0-100 ölçeği pencere içindeki zirveye göre normalize edildiği için donmuş aylar ile aktif aylar arasında değer kıyası yapılmaz
 - Donmuş sayfada "Canlı" ve "bu hafta" denmez; şablon ifadeleri `donmus` alanından alır (`trendsDili()`)
 

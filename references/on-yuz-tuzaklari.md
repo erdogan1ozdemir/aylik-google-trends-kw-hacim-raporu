@@ -90,21 +90,37 @@ Aynı hata ters yönde de vurdu: `<span${tipAttr(not)} class="uyari">` çağrıs
 
 Rapor içindeki "şuna gelince şu görünür" cümleleri **teslimden önce fiilen denenir**. Bu rapor bu hatayı bir kez yaptı: çubuk ipucu notu vardı, ipucu çalışmıyordu.
 
+## 11. Tablodan grafiğe atlama üç ayrı yerden kırılır
+
+Kullanıcı "keyword'e tıklayınca grafiğe gitmiyor" dedi; tek bir test örneği ise çalışıyordu. Üç ayrı kusur vardı:
+
+- **Sayfa bölüm başına kaydırılıyordu.** Bölüm girişi ve filtre ~450px tutuyor, kart kabı ekranın altına taşıyordu. Listenin sonundaki kartta kap daha fazla kayamadığı için kart ekranın altında yarım kalıyordu; dizüstü ekranında ortadaki kartlar da. Düzeltme: sayfa **kart kabının** başına kaydırılır, kap en fazla 62vh olduğu için tamamı ekrana sığar.
+- **Grafik bölümünde filtre açıkken** başka kategoriden bir başlığa tıklanınca hedef kart gizli kalıyor, konumu 0 okunuyordu. Düzeltme: hedef gizliyse bölüm filtresi önce Tümü'ne döner.
+- **Keskin yükselişler tablosu** başlıkları kalın yazıyor ama bağlamıyordu. Tıklanabilir görünen öğe tıklanmıyordu. Düzeltme: grafik kartı olan her başlık bağlanır.
+
+Kap içi hedef konumu `offsetTop` ile değil kabın kendi kutusuna göre (`getBoundingClientRect`) hesaplanır; `offsetTop` ortak konumlanmış ataya bağlı olduğu için düzen değişince kayar.
+
+**Ders:** tek örnek yetmez. İlk, orta ve son öğe, filtre açıkken ve kısa ekranda ayrı ayrı denenir.
+
+## 12. Mobilde içindekiler kayboluyordu
+
+1080px altında yan liste `display:none` oluyor ve yerine hiçbir şey gelmiyordu; tablet ve telefonda bölümler arası gezinme yoktu. Yüzen düğme + alttan açılan panel eklendi. Panel, masaüstü listesinin çalışma anında kopyalanmış halidir (iki liste ayrışmasın diye elle yazılmaz). Açıkken arka plan kilitlenir; örtü, bağlantı ve Escape kapatır; pencere genişleyince kendiliğinden kapanır. Scroll-spy iki listeyi birlikte işaretler.
+
+## 13. Test aracında emülasyon ve tıklama
+
+Tarayıcı paneli gizliyken pencere genişliği 0 okunur ve ekran görüntüsü boş gelir. Görünüm boyutu emüle edildiğinde ise koordinatla ya da öğe referansıyla yapılan tıklamalar sayfanın dışına (`HTML`) düşebilir. Bu durumda sayfa "çalışmıyor" sanılır. Gerçek tıklama testi emülasyonsuz yapılır; ölçüm testleri programatik tıklamayla emüle boyutta yapılır.
+
 ## Teslim Öncesi Tarayıcı Testi
 
-Göz kontrolü yetmez, ölçerek doğrula:
+Göz kontrolü yetmez, ölçerek doğrula. `scripts/tarayici-testi/` altındaki iki betik her sayfada çalıştırılır ve hata listesi boş dönmelidir:
+
+- `sayfa.js`: içindekiler (kırık bağlantı, hizalama, scroll-spy), ay sekmeleri, her `th` balonu, grafik çubuğu balonları, keyword bağlantıları (ilk, orta, son, keskin tablo, filtre açıkken), filtre adetleri ve çoklu seçim, Kat 2 filtresi, yatay taşma, "bu hafta" ve em dash
+- `mobil.js`: yüzen düğme, panelin masaüstü listesinin kopyası olması, açma/kapama (Escape, örtü, bağlantı), panelden bölüme gitme, aktif vurgu, aktif ay sekmesinin görünürlüğü
+
+Sayfayı yerel bir sunucudan açıp betiği aynı kaynaktan yükle:
 
 ```js
-// ToC: her bağlantı gerçek bir bölüme gidiyor mu, hizada mı
-[...document.querySelectorAll('.sidenav a')].filter(a =>
-  !document.getElementById(a.getAttribute('href').slice(1))).length   // 0 olmalı
-
-// Balon: hedefin altında ve ekran içinde mi
-el.dispatchEvent(new MouseEvent('mouseover', {bubbles:true}));
-tt.getBoundingClientRect()
-
-// Filtre: sayılar toplamı toplamla eşit mi
-// Scroll-spy: farklı konumlarda doğru bölüm aktif mi
+await eval(await (await fetch('/sayfa.js')).text())   // { hatalar: [] }
 ```
 
-Ekran görüntüsü boş çıkıyorsa panel gizli olabilir; ölçüm sonuçlarına güven, görüntüye değil.
+En az üç boyutta çalıştır: 1366×860, 1440×700 (kısa dizüstü) ve 375×812. Ekran görüntüsü boş çıkıyorsa panel gizli olabilir; ölçüm sonuçlarına güven, görüntüye değil.

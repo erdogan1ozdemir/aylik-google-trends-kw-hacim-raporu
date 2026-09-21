@@ -197,8 +197,13 @@ function render(d, o) {
       : `<span class="bos" title="Bu başlık için Google Trends ölçümü yapılmamıştır.">-</span>`] : []),
   ]);
 
+  // Keskin listedeki başlıklar aynı havuzdan gelir; grafik kartı olanlar
+  // yükselen tablosundaki gibi karta bağlanır. Kalın yazıp bağlamamak,
+  // tıklanabilir görünüp tıklanmayan bir öğe bırakır.
+  const kartli = new Set(trendliler.map(r => r.kw));
   const keskinSatir = d.keskinler.map(r => [
-    `<b>${esc(r.kw)}</b><i class="alt">${esc(r.k1)}</i>`,
+    (kartli.has(r.kw) ? `<a class="kwl" href="#${kwId(r.kw)}">${esc(r.kw)}</a>` : `<b>${esc(r.kw)}</b>`)
+      + `<i class="alt">${esc(r.k1)}</i>`,
     `<span class="endeks buyuk">${fmtIdx(r.endeks)}</span>`,
     fmtVol(r.hacim25), rozet(r.yoy),
   ]);
@@ -282,6 +287,21 @@ a{color:inherit}
 .hero p{margin:6px 0 0;font-size:14px;color:${C.ink3}}
 .shell{max-width:1560px;margin:0 auto;padding:18px 24px 60px;display:grid;grid-template-columns:264px minmax(0,1fr);gap:26px}
 @media(max-width:1080px){.shell{grid-template-columns:1fr}.sidenav{display:none}}
+/* Dar ekranda içindekiler: yüzen düğme + alttan açılan panel. Panel masaüstü
+   listesinin birebir kopyasıdır (grup etiketleri ve numara rozetleri dahil). */
+.tocfab{display:none;position:fixed;right:16px;bottom:16px;z-index:70;border:0;border-radius:22px;padding:11px 16px;background:${C.ink};color:#fff;font:600 13px/1 inherit;font-family:inherit;box-shadow:0 6px 18px rgba(0,0,0,.18);cursor:pointer}
+@media(max-width:1080px){.tocfab{display:block}}
+.tocsheet{position:fixed;inset:0;z-index:80;background:rgba(16,32,30,.35);display:flex;align-items:flex-end}
+.tocsheet[hidden]{display:none}
+.tocsheet-panel{width:100%;max-height:78vh;overflow-y:auto;background:#fff;border-radius:18px 18px 0 0;padding:14px 12px 22px;box-shadow:0 -8px 24px rgba(0,0,0,.12)}
+.tocsheet-panel h4{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:${C.ink3};margin:10px 8px 5px;font-weight:700}
+.tocsheet-panel h4:first-child{margin-top:2px}
+.tocsheet-panel a{display:flex;gap:8px;padding:10px 9px;border-radius:7px;font-size:14px;color:${C.ink2};text-decoration:none;line-height:1.35}
+.tocsheet-panel a.aktif{background:${C.coralTint};color:${C.coralDeep};font-weight:600}
+.tocsheet-panel a .n{color:${C.ink3};font-size:12px;font-weight:700;min-width:19px}
+.tocsheet-panel a.aktif .n{color:${C.coralDeep}}
+body.toc-acik{overflow:hidden}
+@media print{.tocfab,.tocsheet{display:none!important}}
 .sidenav{position:sticky;top:112px;align-self:start;max-height:calc(100vh - 132px);overflow-y:auto;background:#fff;border:1px solid ${C.line};border-radius:12px;padding:12px;scrollbar-width:thin}
 .sidenav h4{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:${C.ink3};margin:10px 8px 5px;font-weight:700}
 .sidenav h4:first-child{margin-top:2px}
@@ -406,6 +426,8 @@ footer{max-width:1560px;margin:0 auto;padding:0 24px 40px;font-size:11.5px;color
   ${BOLUMLER.map((b, i) => (b.grup ? `<h4>${esc(b.grup)}</h4>` : '')
     + `<a href="#${b.id}"><span class="n">${String(i).padStart(2, '0')}</span> ${esc(b.ad)}</a>`).join('\n  ')}
 </nav>
+<button class="tocfab" id="tocfab" type="button" aria-controls="tocsheet" aria-expanded="false">İçindekiler</button>
+<div class="tocsheet" id="tocsheet" hidden><div class="tocsheet-panel" role="dialog" aria-modal="true" aria-label="İçindekiler"></div></div>
 
 <main>
   <section id="ozet">
@@ -567,8 +589,33 @@ footer{max-width:1560px;margin:0 auto;padding:0 24px 40px;font-size:11.5px;color
   // --- ToC: tıklama, scroll-spy ---
   // Varsayılan hash gezinmesi sticky başlık altında kalıyor; kaydırma elle
   // hesaplanır (appbar + ay sekmeleri yüksekliği kadar pay bırakılır).
-  var baglar = [].slice.call(document.querySelectorAll('.sidenav a'));
+  var tocPanel = document.querySelector('.tocsheet-panel');
+  if (tocPanel) tocPanel.innerHTML = document.getElementById('sidenav').innerHTML;
+  var baglar = [].slice.call(document.querySelectorAll('.sidenav a, .tocsheet-panel a'));
   var bolumler = baglar.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); });
+  // Scroll-spy yalnızca masaüstü listesinin sırasıyla bölüm seçer; vurgu iki listeye birlikte basılır
+  var sira = [].slice.call(document.querySelectorAll('.sidenav a')).map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); });
+  // --- Mobil içindekiler paneli ---
+  var tocFab = document.getElementById('tocfab'), tocSheet = document.getElementById('tocsheet');
+  function tocAc(){
+    if (!tocSheet) return;
+    tocSheet.hidden = false; document.body.classList.add('toc-acik');
+    tocFab.setAttribute('aria-expanded', 'true');
+    var a = tocSheet.querySelector('a.aktif') || tocSheet.querySelector('a'); if (a) a.focus();
+  }
+  function tocKapa(odak){
+    if (!tocSheet || tocSheet.hidden) return;
+    tocSheet.hidden = true; document.body.classList.remove('toc-acik');
+    tocFab.setAttribute('aria-expanded', 'false');
+    if (odak !== false) tocFab.focus();
+  }
+  if (tocFab) {
+    tocFab.addEventListener('click', tocAc);
+    tocSheet.addEventListener('click', function(e){ if (e.target === tocSheet) tocKapa(); });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') tocKapa(); });
+    // Pencere genişleyip yan liste geri geldiğinde açık panel kendiliğinden kapanır
+    window.addEventListener('resize', function(){ if (window.innerWidth > 1080) tocKapa(false); });
+  }
   function ustPay(){
     var ab = document.querySelector('.appbar'), at = document.querySelector('.aytabs');
     return (ab ? ab.offsetHeight : 0) + (at ? at.offsetHeight : 0) + 14;
@@ -602,15 +649,16 @@ footer{max-width:1560px;margin:0 auto;padding:0 24px 40px;font-size:11.5px;color
     a.addEventListener('click', function(e){
       var h = bolumler[i]; if(!h) return;
       e.preventDefault();
+      tocKapa(false);   // panel açıksa önce kapanır; kilit kalkmadan kaydırma çalışmaz
       kaydir([{ el: window, to: h.getBoundingClientRect().top + window.scrollY - ustPay() }]);
       history.replaceState(null, '', a.getAttribute('href'));
     });
   });
   function spy(){
     var y = ustPay() + 20, akt = 0;
-    bolumler.forEach(function(h, i){ if(h && h.getBoundingClientRect().top <= y) akt = i; });
-    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) akt = bolumler.length - 1;
-    baglar.forEach(function(a, i){ a.classList.toggle('aktif', i === akt); });
+    sira.forEach(function(h, i){ if(h && h.getBoundingClientRect().top <= y) akt = i; });
+    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) akt = sira.length - 1;
+    baglar.forEach(function(a, i){ a.classList.toggle('aktif', bolumler[i] === sira[akt]); });
   }
   // Bazı gömülü/önizleme bağlamlarında programatik kaydırma scroll olayı
   // üretmiyor; vurgunun takılı kalmaması için konum ayrıca yoklanır.
@@ -716,10 +764,22 @@ footer{max-width:1560px;margin:0 auto;padding:0 24px 40px;font-size:11.5px;color
       var h = document.getElementById(a.getAttribute('href').slice(1));
       if(!h) return;
       e.preventDefault();
+      // Grafik bölümünde başka bir kategori süzülmüşse hedef kart gizlidir ve
+      // konumu 0 okunur; sayfa bölüme gider ama kart görünmez. Filtre sıfırlanır.
+      if (h.classList.contains('gizli')) {
+        var tumu = document.querySelector('.filtre[data-hedef="${S.trends}"] .mod[data-mod="tumu"]');
+        if (tumu) tumu.click();
+      }
       var kap = document.getElementById('trend-kap');
-      var bolumUst = document.getElementById('${S.trends}');
-      var adimlar = [{ el: window, to: bolumUst.getBoundingClientRect().top + window.scrollY - ustPay() }];
-      if (kap) adimlar.push({ el: kap, to: h.offsetTop - kap.offsetTop - 8 });
+      // Sayfa bölüm başına değil kart kabının başına kaydırılır. Bölüm girişi
+      // ve filtre ~450px tutuyor; bölüm başına gidildiğinde kap ekranın altına
+      // taşıyor ve listenin sonundaki kartlar yarım görünüyordu. Kap en fazla
+      // 62vh olduğundan başına hizalanınca tamamı ekrana sığar.
+      var hedefUst = kap || document.getElementById('${S.trends}');
+      var adimlar = [{ el: window, to: hedefUst.getBoundingClientRect().top + window.scrollY - ustPay() - 8 }];
+      // Konum kabın kendi kutusuna göre ölçülür; offsetTop ortak bir
+      // konumlanmış ataya bağlı olduğundan düzen değişince kayar.
+      if (kap) adimlar.push({ el: kap, to: kap.scrollTop + h.getBoundingClientRect().top - kap.getBoundingClientRect().top - 8 });
       kaydir(adimlar);
       h.style.transition = 'background .25s'; h.style.background = '${C.coralTint}';
       setTimeout(function(){ h.style.background = ''; }, 1400);

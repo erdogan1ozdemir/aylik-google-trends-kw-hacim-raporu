@@ -26,13 +26,17 @@ bugun = dt.date.fromisoformat(a.bugun)
 m1, m2 = (int(x) for x in a.aylar.split('-'))
 
 def son_cmt(g): return g - dt.timedelta(days=(g.weekday() - 5) % 7)
+# Ayın son gününü içeren haftanın Cumartesi'si. Ayın son günleri seriden
+# düşmesin diye pencere o haftayı da kapsar; karşılığında sonraki aydan
+# 0-6 gün seriye girer (ay sonu Cumartesi ise hiç girmez).
+def kapsayan_cmt(g): return g + dt.timedelta(days=(5 - g.weekday()) % 7)
 def ay_son(m): return (dt.date(a.yil, m + 1, 1) if m < 12 else dt.date(a.yil + 1, 1, 1)) - dt.timedelta(days=1)
 def pencere(c): return (c - dt.timedelta(days=370)).isoformat(), c.isoformat()
 
 aktif_c = son_cmt(bugun)
 plan, istek, gorulen = {}, [], set()
 for m in range(m1, m2 + 1):
-    ay_c = son_cmt(ay_son(m))
+    ay_c = kapsayan_cmt(ay_son(m))
     donmus = ay_c < aktif_c          # ayın son tam haftası tamamlandıysa ay geçmiştir
     b, e = pencere(ay_c if donmus else aktif_c)
     plan[m] = (b, e)

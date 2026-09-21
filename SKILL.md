@@ -98,7 +98,7 @@ Bunlar tartışılıp karara bağlanmış noktalar. Yeniden açmadan önce neden
 | "Mevsimsel yükselen" = **iki yılda da** yıl ortalamasının %15 üzeri | Tek yıllık sıçrama mevsimsellik kanıtı değil |
 | Trends her keyword için **ayrı istek** | 0-100 ölçeği istek içinde normalize; toplu çekim küçük kelimeyi eziyor |
 | Trends penceresi **son tamamlanmış Cumartesi**'de biter | `past_12_months` son kovası yarım hafta; ölçüldü: medyan -%11, 337 başlığın 51'inde boş kova |
-| Geçmiş ay **kendi ay sonu penceresiyle** dondurulur | Üç metrik de serinin son haftasına bağlı; Ocak sayfası bugünkü pencereyle Eylül'ü gösterir |
+| Geçmiş ay **kendi ay sonu penceresiyle** dondurulur; son kova ayın son gününü içeren hafta | Üç metrik de serinin son haftasına bağlı; Ocak sayfası bugünkü pencereyle Eylül'ü gösterir |
 | Trends penceresi GKP yıllarından **ayrı etiketlenir** | Trends son 12 ay, GKP takvim yılı. Karıştırmak "Eyl 24" gibi yanlış etiket üretir |
 | Rapor **tek HTML dosya**, logolar `data:` URI | İçerik güvenlik politikası dış kaynağı engelleyebiliyor, dosya taşınabilir kalmalı |
 | Kaydırılabilir tablo + filtre, kırpma yok | Havuzun tamamı gösterilir; "ilk 30" demek kalanı gizlemek olur |
