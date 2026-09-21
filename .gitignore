@@ -1,6 +1,7 @@
 out/
 node_modules/
 *.log
+__pycache__/
 .curlrc
 *.curlrc
 .DS_Store
