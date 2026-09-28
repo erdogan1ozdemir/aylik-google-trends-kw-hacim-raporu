@@ -61,7 +61,7 @@ function grafik(t, kw) {
     const h = Math.max(2, Math.round((v / maks) * 52));
     const son30 = i >= t.sonNIndex;
     const hafta = t.haftalar && t.haftalar[i];
-    const ipucu = [kw, hafta ? `${hafta} haftası` : null, `arama ilgisi ${v}/100`, son30 ? '(son 30 gün)' : null]
+    const ipucu = [kw, hafta || null, `arama ilgisi ${v}/100`, son30 ? '(son 30 gün)' : null]
       .filter(Boolean).join(' · ');
     return `<td width="${pay}%"${tipAttr(ipucu, false)} class="cbar"><i style="height:${h}px;background:${son30 ? C.coralDeep : '#D6D0C8'}"></i></td>`;
   }).join('');

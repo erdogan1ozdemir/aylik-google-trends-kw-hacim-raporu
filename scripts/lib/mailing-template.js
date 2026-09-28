@@ -151,7 +151,7 @@ function miniTrendGrafik(t, { yukseklik = 52, kw = '' } = {}) {
     // hangi hafta ve hangi metrik olduğunu tek yerde görür.
     const parcalar = [
       kw,
-      hafta ? `${hafta} haftası` : null,
+      hafta || null,
       `arama ilgisi ${v}/100`,
       i >= t.sonNIndex ? '(son 30 gün)' : null,
     ].filter(Boolean);

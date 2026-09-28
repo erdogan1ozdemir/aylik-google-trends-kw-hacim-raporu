@@ -32,7 +32,7 @@
   const kartlar = q('.tkart');
   for (const k of [kartlar[0], kartlar[kartlar.length - 1]].filter(Boolean)) {
     const c = k.querySelectorAll('.cbar'); if (c.length !== 53) hata(`${k.id}: ${c.length} çubuk`);
-    for (const b of [c[0], c[c.length - 1]]) if (!/haftası · arama ilgisi \d+\/100/.test(hover(b))) hata(`${k.id} çubuk balonu: ${tt.textContent}`);
+    for (const b of [c[0], c[c.length - 1]]) if (!/\d{4} · arama ilgisi \d+\/100/.test(hover(b))) hata(`${k.id} çubuk balonu: ${tt.textContent}`);
   }
   // 5. Keyword -> kart bağlantıları
   const ids = kartlar.map(k => k.id); const dup = ids.filter((x, i) => ids.indexOf(x) !== i); if (dup.length) hata('çift kart kimliği: ' + dup.join(','));

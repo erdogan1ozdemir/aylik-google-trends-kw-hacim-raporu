@@ -203,7 +203,7 @@ def main(veri_yolu, cikti_yolu):
     if d["trendsHaftalik"]:
         ws = wb.create_sheet("Trends Haftalık Seri")
         ilk = d["trendsHaftalik"][0]
-        basliklar = ["Arama", "Trends Vekil Terim"] + [f"{h} haftası · Trends 0-100 {TR}" for h in ilk["haftalar"]]
+        basliklar = ["Arama", "Trends Vekil Terim"] + [f"{h} · Trends 0-100 {TR}" for h in ilk["haftalar"]]
         satirlar = [[r["kw"], r["vekil"]] + r["seri"] for r in d["trendsHaftalik"]]
         sayfa_yaz(ws, basliklar, satirlar, [28, 20] + [15] * len(ilk["haftalar"]))
         not_satiri(ws, len(satirlar) + 3, "Not:",

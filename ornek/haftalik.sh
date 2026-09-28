@@ -71,6 +71,9 @@ for i, a in enumerate(A):
     if '—' in h or '—' in m: hata.append(f'{a}: em dash')
     if re.search('[âîû]', h + m): hata.append(f'{a}: şapkalı harf')
     if 'bu hafta' in h: hata.append(f'{a}: "bu hafta"')
+    # Grafik balonu hafta aralığını taşır ("20-26 Eylül 2026"); tek tarihli "X haftası" kalmamalı
+    if 'haftası · arama ilgisi' in h + m: hata.append(f'{a}: grafik balonunda tek tarihli hafta')
+    if not re.search(r'\d{1,2}(-\d{1,2})? [A-ZÇĞİÖŞÜ][a-zçğıöşü]+( \d{4})?( - \d{1,2} [A-ZÇĞİÖŞÜ][a-zçğıöşü]+)? \d{4} · arama ilgisi', h): hata.append(f'{a}: grafik balonunda hafta aralığı yok')
     if t['donmus'] and '>Canlı<' in h: hata.append(f'{a}: donmuş sayfada Canlı')
     if not kuru and not t['donmus'] and son != aktif: hata.append(f'{a}: aktif ay güncel pencerede değil ({son})')
     kart, link = h.count('class="tkart"'), h.count('class="kwl"')

@@ -226,17 +226,25 @@ function seriyiTemizle(seri) {
   return out;
 }
 
-// Serideki her haftanın başlangıç tarihini "31 Ağu 2025" biçiminde üretir.
-// Trends haftalık veri döndürür; ilk haftanın tarihi verilirse kalanı 7'şer gün eklenerek bulunur.
+// Serideki her haftanın tarih aralığını "20-26 Eylül 2026" biçiminde üretir
+// (Trends haftası pazar-cumartesi). Yalnız başlangıç günü yazılınca okuyucu
+// haftanın hangi günleri kapsadığını anlayamıyordu. Ay ya da yıl değişirse
+// iki uç ayrı yazılır: "27 Eylül - 3 Ekim 2026", "28 Aralık 2025 - 3 Ocak 2026".
+// İlk haftanın tarihi verilirse kalanı 7'şer gün eklenerek bulunur.
+function haftaAraligi(bas) {
+  const bit = new Date(bas.getTime() + 6 * 86400000);
+  const [g1, a1, y1] = [bas.getUTCDate(), bas.getUTCMonth(), bas.getUTCFullYear()];
+  const [g2, a2, y2] = [bit.getUTCDate(), bit.getUTCMonth(), bit.getUTCFullYear()];
+  if (y1 !== y2) return `${g1} ${TR_MONTHS[a1]} ${y1} - ${g2} ${TR_MONTHS[a2]} ${y2}`;
+  if (a1 !== a2) return `${g1} ${TR_MONTHS[a1]} - ${g2} ${TR_MONTHS[a2]} ${y2}`;
+  return `${g1}-${g2} ${TR_MONTHS[a2]} ${y2}`;
+}
 function haftaEtiketleri(baslangic, adet) {
   if (!baslangic) return null;
   const t0 = new Date(baslangic);
   if (Number.isNaN(t0.getTime())) return null;
   const out = [];
-  for (let i = 0; i < adet; i++) {
-    const d = new Date(t0.getTime() + i * 7 * 86400000);
-    out.push(`${d.getUTCDate()} ${TR_SHORT[d.getUTCMonth()]} ${d.getUTCFullYear()}`);
-  }
+  for (let i = 0; i < adet; i++) out.push(haftaAraligi(new Date(t0.getTime() + i * 7 * 86400000)));
   return out;
 }
 
